@@ -63,12 +63,21 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: 'Cancelado',
 };
 
+type ChartPeriod = '7d' | '30d' | '90d';
+
+const PERIOD_LABELS: Record<ChartPeriod, string> = {
+  '7d': '7 dias',
+  '30d': '30 dias',
+  '90d': '3 meses',
+};
+
 export default function StoreDashboard() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [store, setStore] = useState<StoreType | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('7d');
   const [stats, setStats] = useState<DashboardStats>({
     ordersToday: 0,
     revenueToday: 0,
@@ -95,6 +104,13 @@ export default function StoreDashboard() {
     fetchStoreData();
   }, [user, navigate]);
 
+  // Refetch chart data when period changes
+  useEffect(() => {
+    if (store?.id) {
+      fetchChartData(store.id, chartPeriod);
+    }
+  }, [chartPeriod, store?.id]);
+
   const fetchStoreData = async () => {
     if (!user) return;
 
@@ -113,7 +129,7 @@ export default function StoreDashboard() {
       await Promise.all([
         fetchOrders(storeData.id),
         fetchStats(storeData.id),
-        fetchChartData(storeData.id),
+        fetchChartData(storeData.id, chartPeriod),
       ]);
     }
 
@@ -187,40 +203,74 @@ export default function StoreDashboard() {
     }
   };
 
-  const fetchChartData = async (storeId: string) => {
-    // Get orders from the last 7 days
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
+  const fetchChartData = async (storeId: string, period: ChartPeriod) => {
+    // Calculate days based on period
+    const daysMap: Record<ChartPeriod, number> = {
+      '7d': 7,
+      '30d': 30,
+      '90d': 90,
+    };
+    const days = daysMap[period];
+    
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - (days - 1));
+    startDate.setHours(0, 0, 0, 0);
 
     const { data: recentOrders } = await supabase
       .from('orders')
       .select('total, created_at, status')
       .eq('store_id', storeId)
-      .gte('created_at', sevenDaysAgo.toISOString())
+      .gte('created_at', startDate.toISOString())
       .neq('status', 'cancelled');
 
     if (recentOrders) {
       // Group by date
       const dailyData: Record<string, { pedidos: number; faturamento: number }> = {};
       
-      // Initialize all days
-      for (let i = 0; i < 7; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - (6 - i));
-        const dateStr = date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' });
-        dailyData[dateStr] = { pedidos: 0, faturamento: 0 };
-      }
-
-      // Fill with actual data
-      recentOrders.forEach(order => {
-        const date = new Date(order.created_at);
-        const dateStr = date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' });
-        if (dailyData[dateStr]) {
-          dailyData[dateStr].pedidos += 1;
-          dailyData[dateStr].faturamento += order.total;
+      // For longer periods, group by week or show fewer data points
+      const useWeekly = days > 14;
+      
+      if (useWeekly) {
+        // Group by week for 30d and 90d
+        const weeks = Math.ceil(days / 7);
+        for (let i = 0; i < weeks; i++) {
+          const weekStart = new Date();
+          weekStart.setDate(weekStart.getDate() - ((weeks - 1 - i) * 7));
+          const dateStr = `Sem ${weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`;
+          dailyData[dateStr] = { pedidos: 0, faturamento: 0 };
         }
-      });
+        
+        recentOrders.forEach(order => {
+          const orderDate = new Date(order.created_at);
+          const daysDiff = Math.floor((new Date().getTime() - orderDate.getTime()) / (1000 * 60 * 60 * 24));
+          const weekIndex = Math.floor(daysDiff / 7);
+          const weekStart = new Date();
+          weekStart.setDate(weekStart.getDate() - (weekIndex * 7));
+          const dateStr = `Sem ${weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`;
+          
+          if (dailyData[dateStr]) {
+            dailyData[dateStr].pedidos += 1;
+            dailyData[dateStr].faturamento += order.total;
+          }
+        });
+      } else {
+        // Daily for 7 days
+        for (let i = 0; i < days; i++) {
+          const date = new Date();
+          date.setDate(date.getDate() - (days - 1 - i));
+          const dateStr = date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' });
+          dailyData[dateStr] = { pedidos: 0, faturamento: 0 };
+        }
+
+        recentOrders.forEach(order => {
+          const date = new Date(order.created_at);
+          const dateStr = date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' });
+          if (dailyData[dateStr]) {
+            dailyData[dateStr].pedidos += 1;
+            dailyData[dateStr].faturamento += order.total;
+          }
+        });
+      }
 
       const chartArray = Object.entries(dailyData).map(([date, data]) => ({
         date,
@@ -447,14 +497,28 @@ export default function StoreDashboard() {
             </Card>
           </div>
 
-          {/* Charts */}
+          {/* Period Filter & Charts */}
+          <div className="flex items-center justify-end gap-2 mb-4">
+            <span className="text-sm text-muted-foreground mr-2">Período:</span>
+            {(['7d', '30d', '90d'] as ChartPeriod[]).map((period) => (
+              <Button
+                key={period}
+                variant={chartPeriod === period ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setChartPeriod(period)}
+              >
+                {PERIOD_LABELS[period]}
+              </Button>
+            ))}
+          </div>
+
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Revenue Chart */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" />
-                  Faturamento - Últimos 7 dias
+                  Faturamento - Últimos {PERIOD_LABELS[chartPeriod]}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -514,7 +578,7 @@ export default function StoreDashboard() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <ClipboardList className="w-5 h-5" />
-                  Pedidos - Últimos 7 dias
+                  Pedidos - Últimos {PERIOD_LABELS[chartPeriod]}
                 </CardTitle>
               </CardHeader>
               <CardContent>
