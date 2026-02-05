@@ -2,11 +2,11 @@ import { Plus, Clock, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useCart } from '@/contexts/CartContext';
 import type { Product } from '@/types';
 
 interface ProductCardProps {
   product: Product;
-  onAddToCart?: () => void;
 }
 
 function isNearExpiry(expiryDate: string | null): boolean {
@@ -25,7 +25,8 @@ function daysUntilExpiry(expiryDate: string): number {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
-export function ProductCard({ product, onAddToCart }: ProductCardProps) {
+export function ProductCard({ product }: ProductCardProps) {
+  const { addItem } = useCart();
   const nearExpiry = isNearExpiry(product.expiry_date);
   const hasDiscount = product.discount_percent > 0 || (product.original_price && product.original_price > product.price);
   
@@ -100,10 +101,10 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           {product.is_available && (
             <Button
               size="icon"
-              className="rounded-full w-8 h-8 bg-primary hover:bg-primary/90 text-primary-foreground"
+              className="rounded-full w-8 h-8"
               onClick={(e) => {
                 e.stopPropagation();
-                onAddToCart?.();
+                addItem(product);
               }}
             >
               <Plus className="w-4 h-4" />

@@ -238,7 +238,6 @@ const Index = () => {
             <ProductCard 
               key={product.id} 
               product={product}
-              onAddToCart={() => console.log('Add to cart:', product.id)}
             />
           ))}
         </div>
@@ -260,7 +259,6 @@ const Index = () => {
             <ProductCard 
               key={product.id} 
               product={product}
-              onAddToCart={() => console.log('Add to cart:', product.id)}
             />
           ))}
         </div>
