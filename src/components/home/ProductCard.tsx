@@ -30,7 +30,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const hasDiscount = product.discount_percent > 0 || (product.original_price && product.original_price > product.price);
   
   return (
-    <Card className="overflow-hidden group">
+    <Card className="overflow-hidden group border-border">
       <div className="relative aspect-square bg-muted">
         {product.image_url ? (
           <img 
@@ -53,7 +53,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           )}
           
           {nearExpiry && product.expiry_date && (
-            <Badge className="bg-amber-500 text-white flex items-center gap-1">
+            <Badge className="bg-secondary text-secondary-foreground flex items-center gap-1">
               <Clock className="w-3 h-3" />
               {daysUntilExpiry(product.expiry_date)}d
             </Badge>
@@ -61,14 +61,14 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
         </div>
         
         {product.requires_prescription && (
-          <Badge className="absolute top-2 right-2 bg-destructive">
+          <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
             <AlertTriangle className="w-3 h-3 mr-1" />
             Receita
           </Badge>
         )}
         
         {!product.is_available && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-foreground/50 flex items-center justify-center">
             <Badge variant="secondary">Indisponível</Badge>
           </div>
         )}
@@ -92,7 +92,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
                 R$ {product.original_price.toFixed(2)}
               </span>
             )}
-            <span className="font-bold text-primary">
+            <span className="font-bold text-foreground">
               R$ {product.price.toFixed(2)}
             </span>
           </div>
@@ -100,7 +100,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           {product.is_available && (
             <Button
               size="icon"
-              className="rounded-full w-8 h-8 bg-primary hover:bg-primary/90"
+              className="rounded-full w-8 h-8 bg-primary hover:bg-primary/90 text-primary-foreground"
               onClick={(e) => {
                 e.stopPropagation();
                 onAddToCart?.();

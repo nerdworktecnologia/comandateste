@@ -8,19 +8,19 @@ const slides: SlideContent[] = [
     id: 1,
     title: '30% dos alimentos são desperdiçados',
     description: 'Cerca de 30% dos alimentos são desperdiçados pelos supermercados, farmácias e cosméticos.',
-    bgColor: 'bg-gradient-to-br from-primary to-primary/80'
+    bgColor: 'bg-primary'
   },
   {
     id: 2,
     title: 'Nós viemos para mudar isso',
     description: 'Conectando você a produtos de qualidade com preços reduzidos.',
-    bgColor: 'bg-gradient-to-br from-secondary to-secondary/80'
+    bgColor: 'bg-secondary'
   },
   {
     id: 3,
     title: 'Economize e ajude o planeta',
     description: 'Com o app Comanda você pode comprar produtos perto da validade com preço abaixo do mercado e ajudar a reduzir o desperdício.',
-    bgColor: 'bg-gradient-to-br from-accent to-accent/80'
+    bgColor: 'bg-accent'
   }
 ];
 
@@ -57,9 +57,13 @@ export function HeroSlider() {
             key={slide.id}
             className={`min-w-full h-full ${slide.bgColor} flex items-center justify-center px-6 md:px-12`}
           >
-            <div className="text-center text-white max-w-2xl">
-              <h2 className="text-xl md:text-3xl font-bold mb-2">{slide.title}</h2>
-              <p className="text-sm md:text-base opacity-90">{slide.description}</p>
+            <div className="text-center max-w-2xl">
+              <h2 className={`text-xl md:text-3xl font-bold mb-2 ${slide.bgColor === 'bg-secondary' ? 'text-secondary-foreground' : 'text-primary-foreground'}`}>
+                {slide.title}
+              </h2>
+              <p className={`text-sm md:text-base opacity-90 ${slide.bgColor === 'bg-secondary' ? 'text-secondary-foreground' : 'text-primary-foreground'}`}>
+                {slide.description}
+              </p>
             </div>
           </div>
         ))}
@@ -69,7 +73,7 @@ export function HeroSlider() {
       <Button
         variant="ghost"
         size="icon"
-        className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full"
+        className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/20 hover:bg-background/30 text-foreground rounded-full"
         onClick={prevSlide}
       >
         <ChevronLeft className="w-5 h-5" />
@@ -77,7 +81,7 @@ export function HeroSlider() {
       <Button
         variant="ghost"
         size="icon"
-        className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full"
+        className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/20 hover:bg-background/30 text-foreground rounded-full"
         onClick={nextSlide}
       >
         <ChevronRight className="w-5 h-5" />
@@ -91,8 +95,8 @@ export function HeroSlider() {
             onClick={() => goToSlide(index)}
             className={`w-2 h-2 rounded-full transition-all ${
               index === currentSlide 
-                ? 'bg-white w-6' 
-                : 'bg-white/50 hover:bg-white/75'
+                ? 'bg-background w-6' 
+                : 'bg-background/50 hover:bg-background/75'
             }`}
           />
         ))}
