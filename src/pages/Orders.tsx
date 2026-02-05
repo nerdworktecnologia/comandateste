@@ -63,14 +63,14 @@ export default function CustomerOrders() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-card border-b border-border px-4 py-4">
+      <header className="sticky top-0 z-40 bg-header border-b border-primary/20 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="text-header-text hover:bg-black/10">
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-semibold">Meus Pedidos</h1>
+          <h1 className="text-xl font-semibold text-header-text">Meus Pedidos</h1>
         </div>
       </header>
 
