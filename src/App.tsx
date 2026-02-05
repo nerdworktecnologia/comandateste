@@ -14,6 +14,7 @@ import Checkout from "./pages/Checkout";
 import CustomerOrders from "./pages/Orders";
 import StorePage from "./pages/StorePage";
 import NotFound from "./pages/NotFound";
+import ForBusiness from "./pages/ForBusiness";
 import Profile from "./pages/Profile";
 
 // Store pages
@@ -73,6 +74,9 @@ const App = () => {
                 <Route path="/store/orders" element={<StoreOrders />} />
                 <Route path="/store/coupons" element={<StoreCoupons />} />
                 <Route path="/store/settings" element={<StoreSettings />} />
+                
+                {/* Business landing page */}
+                <Route path="/for-business" element={<ForBusiness />} />
                 
                 {/* Driver routes */}
                 <Route path="/driver/register" element={<DriverRegister />} />
