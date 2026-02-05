@@ -52,7 +52,7 @@ export function Header() {
             </Sheet>
             
             <Link to="/">
-              <Logo size="sm" />
+              <Logo size="sm" showText={false} />
             </Link>
           </div>
 
