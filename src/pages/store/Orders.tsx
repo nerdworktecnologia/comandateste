@@ -58,6 +58,60 @@ export default function StoreOrders() {
     fetchStoreAndOrders();
   }, [user, navigate]);
 
+  // Subscribe to realtime order updates
+  useEffect(() => {
+    if (!store?.id) return;
+
+    console.log('Setting up realtime subscription for orders:', store.id);
+
+    const channel = supabase
+      .channel(`store-orders-${store.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+          filter: `store_id=eq.${store.id}`,
+        },
+        (payload) => {
+          console.log('New order received via realtime:', payload.new);
+          const newOrder = payload.new as Order;
+          setOrders((prev) => [newOrder, ...prev]);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `store_id=eq.${store.id}`,
+        },
+        (payload) => {
+          console.log('Order updated via realtime:', payload.new);
+          const updatedOrder = payload.new as Order;
+          setOrders((prev) =>
+            prev.map((order) =>
+              order.id === updatedOrder.id ? updatedOrder : order
+            )
+          );
+          // Also update selected order if it's the one being viewed
+          if (selectedOrder?.id === updatedOrder.id) {
+            setSelectedOrder(updatedOrder);
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Orders realtime subscription status:', status);
+      });
+
+    return () => {
+      console.log('Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [store?.id, selectedOrder?.id]);
+
   const fetchStoreAndOrders = async () => {
     if (!user) return;
 
