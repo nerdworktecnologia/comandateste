@@ -16,6 +16,7 @@ import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import type { Store, Order, OrderItem, OrderStatus } from '@/types';
 
 const statusConfig: Record<OrderStatus, { label: string; color: string; icon: React.ElementType }> = {
@@ -42,6 +43,12 @@ export default function StoreOrders() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+
+  // Enable real-time notifications for new orders
+  useOrderNotifications({ 
+    storeId: store?.id, 
+    enabled: !!store && store.status === 'approved' 
+  });
 
   useEffect(() => {
     if (!user) {

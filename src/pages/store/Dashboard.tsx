@@ -12,6 +12,7 @@ import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import type { Store as StoreType, Order } from '@/types';
 
 export default function StoreDashboard() {
@@ -20,6 +21,12 @@ export default function StoreDashboard() {
   const [store, setStore] = useState<StoreType | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Enable real-time notifications for new orders
+  useOrderNotifications({ 
+    storeId: store?.id, 
+    enabled: !!store && store.status === 'approved' 
+  });
 
   useEffect(() => {
     if (!user) {
