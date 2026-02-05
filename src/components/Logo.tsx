@@ -1,5 +1,3 @@
-import { ShoppingBag } from 'lucide-react';
-
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
   showText?: boolean;
@@ -7,18 +5,18 @@ interface LogoProps {
 
 export function Logo({ size = 'md', showText = true }: LogoProps) {
   const sizes = {
-    sm: { icon: 'w-6 h-6', text: 'text-lg', container: 'p-1.5' },
-    md: { icon: 'w-8 h-8', text: 'text-2xl', container: 'p-2' },
-    lg: { icon: 'w-12 h-12', text: 'text-4xl', container: 'p-3' }
+    sm: { img: 'h-8', text: 'text-lg' },
+    md: { img: 'h-10', text: 'text-2xl' },
+    lg: { img: 'h-14', text: 'text-4xl' }
   };
 
   return (
     <div className="flex items-center gap-2">
-      <div className="relative">
-        <div className={`bg-primary rounded-xl ${sizes[size].container} shadow-lg`}>
-          <ShoppingBag className={`${sizes[size].icon} text-primary-foreground`} />
-        </div>
-      </div>
+      <img 
+        src="/logo.png" 
+        alt="Comanda" 
+        className={`${sizes[size].img} w-auto`}
+      />
       {showText && (
         <span className={`${sizes[size].text} font-bold text-foreground`}>
           Comanda
