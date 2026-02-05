@@ -14,6 +14,7 @@ import StoreRegister from "./pages/store/Register";
 import StoreDashboard from "./pages/store/Dashboard";
 import StoreProducts from "./pages/store/Products";
 import ProductForm from "./pages/store/ProductForm";
+import StoreOrders from "./pages/store/Orders";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/store/products" element={<StoreProducts />} />
             <Route path="/store/products/new" element={<ProductForm />} />
             <Route path="/store/products/:id/edit" element={<ProductForm />} />
+            <Route path="/store/orders" element={<StoreOrders />} />
             
             {/* Public routes with Layout */}
             <Route element={<Layout />}>
