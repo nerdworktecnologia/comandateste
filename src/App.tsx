@@ -19,6 +19,10 @@ import StoreProducts from "./pages/store/Products";
 import ProductForm from "./pages/store/ProductForm";
 import StoreOrders from "./pages/store/Orders";
 
+// Admin pages
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminStores from "./pages/admin/Stores";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -41,6 +45,10 @@ const App = () => (
               <Route path="/store/products/new" element={<ProductForm />} />
               <Route path="/store/products/:id/edit" element={<ProductForm />} />
               <Route path="/store/orders" element={<StoreOrders />} />
+              
+              {/* Admin routes */}
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/stores" element={<AdminStores />} />
               
               {/* Public routes with Layout */}
               <Route element={<Layout />}>
