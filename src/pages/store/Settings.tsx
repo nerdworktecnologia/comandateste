@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, Package, ClipboardList, Settings, 
-  LogOut, Save, Store, Clock, Truck, Image, Loader2
+  LogOut, Save, Store, Clock, Truck, Image, Loader2, Bell
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { Store as StoreType } from '@/types';
+import { NotificationSoundSettings } from '@/components/store/NotificationSoundSettings';
 
 interface OpeningHours {
   [key: string]: { open: string; close: string; closed: boolean };
@@ -237,7 +238,7 @@ export default function StoreSettings() {
 
         <div className="p-4 lg:p-6">
           <Tabs defaultValue="info" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
+            <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
               <TabsTrigger value="info" className="gap-2">
                 <Store className="w-4 h-4 hidden sm:block" />
                 Informações
@@ -253,6 +254,10 @@ export default function StoreSettings() {
               <TabsTrigger value="delivery" className="gap-2">
                 <Truck className="w-4 h-4 hidden sm:block" />
                 Entrega
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="gap-2">
+                <Bell className="w-4 h-4 hidden sm:block" />
+                Notificações
               </TabsTrigger>
             </TabsList>
 
@@ -540,6 +545,11 @@ export default function StoreSettings() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Notifications Tab */}
+            <TabsContent value="notifications">
+              <NotificationSoundSettings />
             </TabsContent>
           </Tabs>
         </div>
