@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, MapPin, Menu, Bell, ShoppingBag } from 'lucide-react';
+import { Search, MapPin, Menu, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
+import { CartDrawer } from '@/components/cart/CartDrawer';
 
 export function Header() {
   const { user, profile } = useAuth();
@@ -75,14 +76,7 @@ export function Header() {
               </Badge>
             </Button>
             
-            <Link to="/cart">
-              <Button variant="ghost" size="icon" className="relative">
-                <ShoppingBag className="w-5 h-5" />
-                <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 text-[10px] bg-secondary">
-                  2
-                </Badge>
-              </Button>
-            </Link>
+            <CartDrawer />
 
             {user ? (
               <Link to="/profile">
