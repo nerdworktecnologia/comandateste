@@ -1,17 +1,15 @@
-import { useState } from 'react';
-import { Search, MapPin, Menu, Bell } from 'lucide-react';
+import { MapPin, Menu, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { CartDrawer } from '@/components/cart/CartDrawer';
+import { GlobalSearch } from '@/components/search/GlobalSearch';
 
 export function Header() {
   const { user, profile } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
 
   return (
     <header className="sticky top-0 z-40 bg-card border-b border-border">
@@ -99,14 +97,8 @@ export function Header() {
         </div>
 
         {/* Search Bar */}
-        <div className="mt-3 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar produtos, lojas ou categorias..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-muted border-0"
-          />
+        <div className="mt-3">
+          <GlobalSearch />
         </div>
       </div>
     </header>
