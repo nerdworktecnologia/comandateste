@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNotificationSound } from '@/hooks/useNotificationSound';
 import { Database } from '@/integrations/supabase/types';
 
 type Order = Database['public']['Tables']['orders']['Row'];
@@ -12,14 +13,40 @@ interface UseOrderNotificationsOptions {
 
 export function useOrderNotifications({ storeId, enabled = true }: UseOrderNotificationsOptions) {
   const { toast } = useToast();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { playSound } = useNotificationSound();
+
+  const handleNewOrder = useCallback((newOrder: Order) => {
+    console.log('New order received:', newOrder);
+
+    // Play notification sound
+    playSound();
+
+    // Show toast notification
+    toast({
+      title: '🔔 Novo Pedido!',
+      description: `Pedido #${newOrder.order_number} recebido - ${formatCurrency(newOrder.total)}`,
+      duration: 10000,
+    });
+  }, [playSound, toast]);
+
+  const handleOrderUpdate = useCallback((updatedOrder: Order, oldOrder: Partial<Order>) => {
+    // Only notify on status changes
+    if (oldOrder.status !== updatedOrder.status) {
+      console.log('Order status updated:', updatedOrder.order_number, updatedOrder.status);
+      
+      if (updatedOrder.status === 'cancelled') {
+        toast({
+          title: '❌ Pedido Cancelado',
+          description: `Pedido #${updatedOrder.order_number} foi cancelado`,
+          variant: 'destructive',
+          duration: 8000,
+        });
+      }
+    }
+  }, [toast]);
 
   useEffect(() => {
     if (!enabled || !storeId) return;
-
-    // Create audio element for notification sound
-    audioRef.current = new Audio('/notification.mp3');
-    audioRef.current.volume = 0.5;
 
     const channel = supabase
       .channel(`orders-${storeId}`)
@@ -32,20 +59,7 @@ export function useOrderNotifications({ storeId, enabled = true }: UseOrderNotif
           filter: `store_id=eq.${storeId}`,
         },
         (payload) => {
-          const newOrder = payload.new as Order;
-          console.log('New order received:', newOrder);
-
-          // Play notification sound
-          audioRef.current?.play().catch(err => {
-            console.log('Could not play notification sound:', err);
-          });
-
-          // Show toast notification
-          toast({
-            title: '🔔 Novo Pedido!',
-            description: `Pedido #${newOrder.order_number} recebido - ${formatCurrency(newOrder.total)}`,
-            duration: 10000,
-          });
+          handleNewOrder(payload.new as Order);
         }
       )
       .on(
@@ -57,22 +71,7 @@ export function useOrderNotifications({ storeId, enabled = true }: UseOrderNotif
           filter: `store_id=eq.${storeId}`,
         },
         (payload) => {
-          const updatedOrder = payload.new as Order;
-          const oldOrder = payload.old as Partial<Order>;
-          
-          // Only notify on status changes
-          if (oldOrder.status !== updatedOrder.status) {
-            console.log('Order status updated:', updatedOrder.order_number, updatedOrder.status);
-            
-            if (updatedOrder.status === 'cancelled') {
-              toast({
-                title: '❌ Pedido Cancelado',
-                description: `Pedido #${updatedOrder.order_number} foi cancelado`,
-                variant: 'destructive',
-                duration: 8000,
-              });
-            }
-          }
+          handleOrderUpdate(payload.new as Order, payload.old as Partial<Order>);
         }
       )
       .subscribe((status) => {
@@ -83,7 +82,7 @@ export function useOrderNotifications({ storeId, enabled = true }: UseOrderNotif
       console.log('Unsubscribing from order notifications');
       supabase.removeChannel(channel);
     };
-  }, [storeId, enabled, toast]);
+  }, [storeId, enabled, handleNewOrder, handleOrderUpdate]);
 }
 
 function formatCurrency(value: number): string {
