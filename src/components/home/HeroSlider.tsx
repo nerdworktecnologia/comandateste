@@ -1,26 +1,36 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { SlideContent } from '@/types';
+
+interface SlideContent {
+  id: number;
+  title: string;
+  description: string;
+  image: string;
+  overlay: 'dark' | 'light';
+}
 
 const slides: SlideContent[] = [
   {
     id: 1,
     title: '30% dos alimentos são desperdiçados',
     description: 'Cerca de 30% dos alimentos são desperdiçados pelos supermercados, farmácias e cosméticos.',
-    bgColor: 'bg-primary'
+    image: '/banners/banner-1.jpg',
+    overlay: 'light'
   },
   {
     id: 2,
     title: 'Nós viemos para mudar isso',
     description: 'Conectando você a produtos de qualidade com preços reduzidos.',
-    bgColor: 'bg-secondary'
+    image: '/banners/banner-2.jpg',
+    overlay: 'dark'
   },
   {
     id: 3,
     title: 'Economize e ajude o planeta',
-    description: 'Com o app Comanda você pode comprar produtos perto da validade com preço abaixo do mercado e ajudar a reduzir o desperdício.',
-    bgColor: 'bg-accent'
+    description: 'Com o app Comanda você pode comprar produtos perto da validade com preço abaixo do mercado.',
+    image: '/banners/banner-3.jpg',
+    overlay: 'light'
   }
 ];
 
@@ -47,7 +57,7 @@ export function HeroSlider() {
   };
 
   return (
-    <div className="relative w-full h-48 md:h-64 rounded-2xl overflow-hidden">
+    <div className="relative w-full h-48 md:h-64 lg:h-80 rounded-2xl overflow-hidden shadow-lg">
       <div 
         className="flex transition-transform duration-500 ease-out h-full"
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
@@ -55,15 +65,23 @@ export function HeroSlider() {
         {slides.map((slide) => (
           <div
             key={slide.id}
-            className={`min-w-full h-full ${slide.bgColor} flex items-center justify-center px-6 md:px-12`}
+            className="min-w-full h-full relative"
           >
-            <div className="text-center max-w-2xl">
-              <h2 className={`text-xl md:text-3xl font-bold mb-2 ${slide.bgColor === 'bg-secondary' ? 'text-secondary-foreground' : 'text-primary-foreground'}`}>
-                {slide.title}
-              </h2>
-              <p className={`text-sm md:text-base opacity-90 ${slide.bgColor === 'bg-secondary' ? 'text-secondary-foreground' : 'text-primary-foreground'}`}>
-                {slide.description}
-              </p>
+            <img 
+              src={slide.image} 
+              alt={slide.title}
+              className="w-full h-full object-cover"
+            />
+            <div className={`absolute inset-0 ${slide.overlay === 'dark' ? 'bg-black/50' : 'bg-black/30'}`} />
+            <div className="absolute inset-0 flex items-center justify-center px-6 md:px-12">
+              <div className="text-center max-w-2xl">
+                <h2 className="text-xl md:text-3xl lg:text-4xl font-bold mb-2 text-white drop-shadow-lg">
+                  {slide.title}
+                </h2>
+                <p className="text-sm md:text-base lg:text-lg text-white/90 drop-shadow-md">
+                  {slide.description}
+                </p>
+              </div>
             </div>
           </div>
         ))}
@@ -73,7 +91,7 @@ export function HeroSlider() {
       <Button
         variant="ghost"
         size="icon"
-        className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/20 hover:bg-background/30 text-foreground rounded-full"
+        className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full backdrop-blur-sm"
         onClick={prevSlide}
       >
         <ChevronLeft className="w-5 h-5" />
@@ -81,7 +99,7 @@ export function HeroSlider() {
       <Button
         variant="ghost"
         size="icon"
-        className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/20 hover:bg-background/30 text-foreground rounded-full"
+        className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full backdrop-blur-sm"
         onClick={nextSlide}
       >
         <ChevronRight className="w-5 h-5" />
@@ -95,8 +113,8 @@ export function HeroSlider() {
             onClick={() => goToSlide(index)}
             className={`w-2 h-2 rounded-full transition-all ${
               index === currentSlide 
-                ? 'bg-background w-6' 
-                : 'bg-background/50 hover:bg-background/75'
+                ? 'bg-white w-6' 
+                : 'bg-white/50 hover:bg-white/75'
             }`}
           />
         ))}
