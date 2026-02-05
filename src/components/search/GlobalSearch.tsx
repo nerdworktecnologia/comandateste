@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Store, Package, Loader2, X, SlidersHorizontal, Clock, Trash2 } from 'lucide-react';
+import { Search, Store, Package, Loader2, X, SlidersHorizontal, Clock, Trash2, TrendingUp } from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -78,6 +78,7 @@ export function GlobalSearch() {
   const [products, setProducts] = useState<SearchProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+  const [popularProducts, setPopularProducts] = useState<SearchProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const navigate = useNavigate();
@@ -91,7 +92,7 @@ export function GlobalSearch() {
 
   const hasActiveFilters = selectedCategory || onlyOpenStores || onlyWithDiscount || priceRange[0] > 0 || priceRange[1] < 500;
 
-  // Load categories and search history on open
+  // Load categories, search history, and popular products on open
   useEffect(() => {
     if (open) {
       if (categories.length === 0) {
@@ -116,8 +117,24 @@ export function GlobalSearch() {
             if (data) setSearchHistory(data);
           });
       }
+
+      // Load popular products (by sales count)
+      if (popularProducts.length === 0) {
+        supabase
+          .from('products')
+          .select(`
+            id, name, price, original_price, discount_percent, image_url, store_id,
+            stores!inner(name, slug, is_open)
+          `)
+          .eq('is_available', true)
+          .order('sales_count', { ascending: false })
+          .limit(6)
+          .then(({ data }) => {
+            if (data) setPopularProducts(data as SearchProduct[]);
+          });
+      }
     }
-  }, [open, categories.length, user]);
+  }, [open, categories.length, user, popularProducts.length]);
 
   // Toggle with keyboard shortcut
   useEffect(() => {
@@ -390,7 +407,7 @@ export function GlobalSearch() {
             </div>
           )}
 
-          {!loading && !query && !hasActiveFilters && searchHistory.length === 0 && (
+          {!loading && !query && !hasActiveFilters && searchHistory.length === 0 && popularProducts.length === 0 && (
             <CommandEmpty>
               <div className="text-center py-6">
                 <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
@@ -441,6 +458,45 @@ export function GlobalSearch() {
                   >
                     <X className="h-3 w-3" />
                   </Button>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+
+          {/* Popular Products */}
+          {!loading && !query && !hasActiveFilters && popularProducts.length > 0 && (
+            <CommandGroup heading={
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                <span>Produtos populares</span>
+              </div>
+            }>
+              {popularProducts.map((product) => (
+                <CommandItem
+                  key={product.id}
+                  value={`popular-${product.name}`}
+                  onSelect={() => handleProductSelect(product)}
+                  className="cursor-pointer"
+                >
+                  <Package className="mr-2 h-4 w-4 text-primary" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{product.name}</span>
+                      {product.discount_percent && product.discount_percent > 0 && (
+                        <Badge variant="destructive" className="text-[10px] h-5">
+                          -{product.discount_percent}%
+                        </Badge>
+                      )}
+                    </div>
+                    {product.stores && (
+                      <p className="text-xs text-muted-foreground">
+                        {product.stores.name}
+                      </p>
+                    )}
+                  </div>
+                  <div className="font-semibold text-primary">
+                    {formatPrice(product.price)}
+                  </div>
                 </CommandItem>
               ))}
             </CommandGroup>
