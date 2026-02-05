@@ -18,7 +18,7 @@ export function Logo({ size = 'md', showText = true }: LogoProps) {
         className={`${sizes[size].img} w-auto`}
       />
       {showText && (
-        <span className={`${sizes[size].text} font-bold text-foreground`}>
+        <span className={`${sizes[size].text} font-bold text-foreground hidden md:block`}>
           Comanda
         </span>
       )}
