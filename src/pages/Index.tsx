@@ -23,16 +23,41 @@ const Index = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [activeCategory]);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
+      // Fetch categories to map category_id to category_type
+      const { data: categoriesData } = await supabase
+        .from('categories')
+        .select('id, category_type')
+        .eq('is_active', true);
+
+      const categoryMap = new Map<string, string>();
+      (categoriesData || []).forEach((cat: { id: string; category_type: string }) => {
+        categoryMap.set(cat.id, cat.category_type);
+      });
+
       // Fetch all approved stores
-      const { data: storesData } = await supabase
+      let storesQuery = supabase
         .from('stores')
         .select('*')
         .eq('status', 'approved')
         .order('rating', { ascending: false });
+
+      // Filter by category if not 'all'
+      if (activeCategory !== 'all') {
+        const categoryIds = Array.from(categoryMap.entries())
+          .filter(([_, type]) => type === activeCategory)
+          .map(([id]) => id);
+        
+        if (categoryIds.length > 0) {
+          storesQuery = storesQuery.in('category_id', categoryIds);
+        }
+      }
+
+      const { data: storesData } = await storesQuery;
 
       const allStores = (storesData || []) as Store[];
       setStores(allStores);
@@ -47,7 +72,7 @@ const Index = () => {
       const sevenDaysFromNow = new Date();
       sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
       
-      const { data: expiryProducts } = await supabase
+      let expiryQuery = supabase
         .from('products')
         .select('*')
         .eq('is_available', true)
@@ -57,16 +82,40 @@ const Index = () => {
         .order('expiry_date', { ascending: true })
         .limit(8);
 
+      // Filter products by category
+      if (activeCategory !== 'all') {
+        const categoryIds = Array.from(categoryMap.entries())
+          .filter(([_, type]) => type === activeCategory)
+          .map(([id]) => id);
+        
+        if (categoryIds.length > 0) {
+          expiryQuery = expiryQuery.in('category_id', categoryIds);
+        }
+      }
+
+      const { data: expiryProducts } = await expiryQuery;
       setNearExpiryProducts((expiryProducts || []) as Product[]);
 
       // Fetch best sellers
-      const { data: bestSellersData } = await supabase
+      let bestSellersQuery = supabase
         .from('products')
         .select('*')
         .eq('is_available', true)
         .order('sales_count', { ascending: false })
         .limit(8);
 
+      // Filter best sellers by category
+      if (activeCategory !== 'all') {
+        const categoryIds = Array.from(categoryMap.entries())
+          .filter(([_, type]) => type === activeCategory)
+          .map(([id]) => id);
+        
+        if (categoryIds.length > 0) {
+          bestSellersQuery = bestSellersQuery.in('category_id', categoryIds);
+        }
+      }
+
+      const { data: bestSellersData } = await bestSellersQuery;
       setBestSellers((bestSellersData || []) as Product[]);
     } catch (error) {
       console.error('Error fetching data:', error);
