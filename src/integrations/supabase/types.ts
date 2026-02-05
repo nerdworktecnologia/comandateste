@@ -478,6 +478,36 @@ export type Database = {
           },
         ]
       }
+      search_history: {
+        Row: {
+          created_at: string
+          id: string
+          query: string
+          result_id: string | null
+          result_name: string | null
+          result_type: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          query: string
+          result_id?: string | null
+          result_name?: string | null
+          result_type?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          query?: string
+          result_id?: string | null
+          result_name?: string | null
+          result_type?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       store_staff: {
         Row: {
           created_at: string

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Store, Package, Loader2, Filter, X, SlidersHorizontal } from 'lucide-react';
+import { Search, Store, Package, Loader2, X, SlidersHorizontal, Clock, Trash2 } from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -21,6 +21,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SearchStore {
   id: string;
@@ -54,6 +55,14 @@ interface Category {
   category_type: string;
 }
 
+interface SearchHistoryItem {
+  id: string;
+  query: string;
+  result_type: string | null;
+  result_name: string | null;
+  created_at: string;
+}
+
 const PRICE_RANGES = [
   { label: 'Todos', min: 0, max: Infinity },
   { label: 'Até R$ 20', min: 0, max: 20 },
@@ -68,9 +77,11 @@ export function GlobalSearch() {
   const [stores, setStores] = useState<SearchStore[]>([]);
   const [products, setProducts] = useState<SearchProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Filters state
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -80,19 +91,33 @@ export function GlobalSearch() {
 
   const hasActiveFilters = selectedCategory || onlyOpenStores || onlyWithDiscount || priceRange[0] > 0 || priceRange[1] < 500;
 
-  // Load categories on open
+  // Load categories and search history on open
   useEffect(() => {
-    if (open && categories.length === 0) {
-      supabase
-        .from('categories')
-        .select('id, name, slug, category_type')
-        .eq('is_active', true)
-        .order('sort_order')
-        .then(({ data }) => {
-          if (data) setCategories(data);
-        });
+    if (open) {
+      if (categories.length === 0) {
+        supabase
+          .from('categories')
+          .select('id, name, slug, category_type')
+          .eq('is_active', true)
+          .order('sort_order')
+          .then(({ data }) => {
+            if (data) setCategories(data);
+          });
+      }
+      
+      // Load search history for logged-in users
+      if (user) {
+        supabase
+          .from('search_history')
+          .select('id, query, result_type, result_name, created_at')
+          .order('created_at', { ascending: false })
+          .limit(10)
+          .then(({ data }) => {
+            if (data) setSearchHistory(data);
+          });
+      }
     }
-  }, [open, categories.length]);
+  }, [open, categories.length, user]);
 
   // Toggle with keyboard shortcut
   useEffect(() => {
@@ -175,17 +200,60 @@ export function GlobalSearch() {
     return () => clearTimeout(timer);
   }, [query, selectedCategory, priceRange, onlyOpenStores, onlyWithDiscount]);
 
-  const handleStoreSelect = useCallback((slug: string) => {
-    setOpen(false);
-    setQuery('');
-    navigate(`/loja/${slug}`);
-  }, [navigate]);
+  const saveToHistory = useCallback(async (searchQuery: string, resultType: string, resultId: string, resultName: string) => {
+    if (!user || !searchQuery.trim()) return;
+    
+    try {
+      await supabase.from('search_history').insert({
+        user_id: user.id,
+        query: searchQuery.trim(),
+        result_type: resultType,
+        result_id: resultId,
+        result_name: resultName,
+      });
+    } catch (error) {
+      console.error('Error saving search history:', error);
+    }
+  }, [user]);
 
-  const handleProductSelect = useCallback((storeSlug: string) => {
+  const handleStoreSelect = useCallback(async (store: SearchStore) => {
+    await saveToHistory(query, 'store', store.id, store.name);
     setOpen(false);
     setQuery('');
-    navigate(`/loja/${storeSlug}`);
-  }, [navigate]);
+    navigate(`/loja/${store.slug}`);
+  }, [navigate, query, saveToHistory]);
+
+  const handleProductSelect = useCallback(async (product: SearchProduct) => {
+    if (!product.stores) return;
+    await saveToHistory(query, 'product', product.id, product.name);
+    setOpen(false);
+    setQuery('');
+    navigate(`/loja/${product.stores.slug}`);
+  }, [navigate, query, saveToHistory]);
+
+  const handleHistorySelect = useCallback((item: SearchHistoryItem) => {
+    setQuery(item.query);
+  }, []);
+
+  const clearHistory = useCallback(async () => {
+    if (!user) return;
+    try {
+      await supabase.from('search_history').delete().eq('user_id', user.id);
+      setSearchHistory([]);
+    } catch (error) {
+      console.error('Error clearing history:', error);
+    }
+  }, [user]);
+
+  const removeHistoryItem = useCallback(async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await supabase.from('search_history').delete().eq('id', id);
+      setSearchHistory(prev => prev.filter(item => item.id !== id));
+    } catch (error) {
+      console.error('Error removing history item:', error);
+    }
+  }, []);
 
   const clearFilters = () => {
     setSelectedCategory(null);
@@ -322,7 +390,7 @@ export function GlobalSearch() {
             </div>
           )}
 
-          {!loading && !query && !hasActiveFilters && (
+          {!loading && !query && !hasActiveFilters && searchHistory.length === 0 && (
             <CommandEmpty>
               <div className="text-center py-6">
                 <Search className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
@@ -331,6 +399,51 @@ export function GlobalSearch() {
                 </p>
               </div>
             </CommandEmpty>
+          )}
+
+          {/* Search History */}
+          {!loading && !query && !hasActiveFilters && searchHistory.length > 0 && (
+            <CommandGroup heading={
+              <div className="flex items-center justify-between">
+                <span>Buscas recentes</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearHistory}
+                  className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <Trash2 className="h-3 w-3 mr-1" />
+                  Limpar
+                </Button>
+              </div>
+            }>
+              {searchHistory.map((item) => (
+                <CommandItem
+                  key={item.id}
+                  value={item.query}
+                  onSelect={() => handleHistorySelect(item)}
+                  className="cursor-pointer group"
+                >
+                  <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+                  <div className="flex-1">
+                    <span>{item.query}</span>
+                    {item.result_name && (
+                      <span className="text-xs text-muted-foreground ml-2">
+                        → {item.result_name}
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => removeHistoryItem(item.id, e)}
+                    className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </CommandItem>
+              ))}
+            </CommandGroup>
           )}
 
           {!loading && (query || hasActiveFilters) && stores.length === 0 && products.length === 0 && (
@@ -354,7 +467,7 @@ export function GlobalSearch() {
                 <CommandItem
                   key={store.id}
                   value={store.name}
-                  onSelect={() => handleStoreSelect(store.slug)}
+                  onSelect={() => handleStoreSelect(store)}
                   className="cursor-pointer"
                 >
                   <Store className="mr-2 h-4 w-4 text-primary" />
@@ -392,7 +505,7 @@ export function GlobalSearch() {
                 <CommandItem
                   key={product.id}
                   value={product.name}
-                  onSelect={() => product.stores && handleProductSelect(product.stores.slug)}
+                  onSelect={() => handleProductSelect(product)}
                   className="cursor-pointer"
                 >
                   <Package className="mr-2 h-4 w-4 text-secondary" />
