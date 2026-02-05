@@ -22,6 +22,7 @@ import ProductForm from "./pages/store/ProductForm";
 import StoreOrders from "./pages/store/Orders";
 import StoreSettings from "./pages/store/Settings";
 import StoreCoupons from "./pages/store/Coupons";
+import DriverRegister from "./pages/driver/Register";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -53,6 +54,10 @@ const App = () => (
               <Route path="/store/orders" element={<StoreOrders />} />
               <Route path="/store/coupons" element={<StoreCoupons />} />
               <Route path="/store/settings" element={<StoreSettings />} />
+              
+              {/* Driver routes */}
+              <Route path="/driver/register" element={<DriverRegister />} />
+              <Route path="/for-drivers" element={<DriverRegister />} />
               
               {/* Admin routes */}
               <Route path="/admin" element={<AdminDashboard />} />
