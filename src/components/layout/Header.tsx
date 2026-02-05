@@ -12,14 +12,14 @@ export function Header() {
   const { user, profile } = useAuth();
 
   return (
-    <header className="sticky top-0 z-40 bg-card border-b border-border">
+    <header className="sticky top-0 z-40 bg-header border-b border-primary/20">
       <div className="container mx-auto px-4 py-3">
         {/* Top Row */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
+                <Button variant="ghost" size="icon" className="md:hidden text-header-text hover:bg-white/20">
                   <Menu className="w-5 h-5" />
                 </Button>
               </SheetTrigger>
@@ -57,19 +57,19 @@ export function Header() {
           </div>
 
           {/* Location */}
-          <button className="hidden md:flex items-center gap-2 text-sm hover:bg-muted px-3 py-2 rounded-lg transition-colors">
-            <MapPin className="w-4 h-4 text-primary" />
-            <span className="text-muted-foreground">Entregar em</span>
-            <span className="font-medium truncate max-w-[150px]">
+          <button className="hidden md:flex items-center gap-2 text-sm hover:bg-white/20 px-3 py-2 rounded-lg transition-colors">
+            <MapPin className="w-4 h-4 text-header-text" />
+            <span className="text-header-text/80">Entregar em</span>
+            <span className="font-medium truncate max-w-[150px] text-header-text">
               {profile?.address || 'Definir endereço'}
             </span>
           </button>
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="relative">
+            <Button variant="ghost" size="icon" className="relative text-header-text hover:bg-white/20">
               <Bell className="w-5 h-5" />
-              <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 text-[10px] bg-primary">
+              <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 text-[10px] bg-secondary text-secondary-foreground">
                 3
               </Badge>
             </Button>
@@ -78,9 +78,9 @@ export function Header() {
 
             {user ? (
               <Link to="/profile">
-                <Button variant="ghost" size="icon">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary font-medium text-sm">
+                <Button variant="ghost" size="icon" className="hover:bg-white/20">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+                    <span className="text-header-text font-medium text-sm">
                       {profile?.full_name?.[0] || user.email?.[0]?.toUpperCase() || 'U'}
                     </span>
                   </div>
@@ -88,7 +88,7 @@ export function Header() {
               </Link>
             ) : (
               <Link to="/auth">
-                <Button size="sm" className="bg-primary hover:bg-primary/90">
+                <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
                   Entrar
                 </Button>
               </Link>
