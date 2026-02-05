@@ -17,9 +17,14 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 5%;
 
-    /* Amarelo Comanda - R255 G237 B0 */
-    --primary: 56 100% 50%;
+    /* Amarelo Ouro - Gold Yellow */
+    --primary: 45 100% 51%;
     --primary-foreground: 0 0% 5%;
+    
+    /* Header customization */
+    --header-background: 45 100% 51%;
+    --header-foreground: 0 0% 100%;
+    --header-text: 0 0% 5%;
 
     /* Preto/Cinza escuro - cor secundária */
     --secondary: 0 0% 10%;
@@ -28,8 +33,8 @@ All colors MUST be HSL.
     --muted: 56 20% 95%;
     --muted-foreground: 0 0% 40%;
 
-    /* Amarelo escuro para accent */
-    --accent: 56 100% 45%;
+    /* Amarelo ouro escuro para accent */
+    --accent: 45 100% 45%;
     --accent-foreground: 0 0% 5%;
 
     --destructive: 0 84% 60%;
@@ -37,7 +42,7 @@ All colors MUST be HSL.
 
     --border: 56 20% 88%;
     --input: 56 20% 90%;
-    --ring: 56 100% 50%;
+    --ring: 45 100% 51%;
 
     --radius: 0.75rem;
 
