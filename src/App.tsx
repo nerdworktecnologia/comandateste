@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Checkout from "./pages/Checkout";
 import CustomerOrders from "./pages/Orders";
+import StorePage from "./pages/StorePage";
 import NotFound from "./pages/NotFound";
 
 // Store pages
@@ -53,6 +54,7 @@ const App = () => (
               {/* Public routes with Layout */}
               <Route element={<Layout />}>
                 <Route path="/" element={<Index />} />
+                <Route path="/loja/:slug" element={<StorePage />} />
               </Route>
               
               {/* Catch-all */}

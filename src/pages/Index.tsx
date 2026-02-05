@@ -280,7 +280,6 @@ const Index = () => {
             <StoreCard 
               key={store.id} 
               store={store}
-              onClick={() => navigate(`/store/${store.slug}`)}
             />
           ))}
         </div>
@@ -299,7 +298,6 @@ const Index = () => {
             <StoreCard 
               key={store.id} 
               store={store}
-              onClick={() => navigate(`/store/${store.slug}`)}
             />
           ))}
         </div>
