@@ -1,9 +1,13 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Building2, MapPin, Phone, Mail, Clock, ArrowLeft } from 'lucide-react';
+import { 
+  Building2, MapPin, Phone, Mail, Clock, ArrowLeft, 
+  CheckCircle, Store, TrendingUp, Users, Headphones, Shield,
+  Rocket
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -34,10 +38,44 @@ const storeSchema = z.object({
 
 type StoreForm = z.infer<typeof storeSchema>;
 
+const benefits = [
+  {
+    icon: TrendingUp,
+    title: 'Aumente suas vendas',
+    description: 'Alcance milhares de clientes na sua região'
+  },
+  {
+    icon: Rocket,
+    title: 'Comece rápido',
+    description: 'Cadastro simples e aprovação em até 24h'
+  },
+  {
+    icon: Users,
+    title: 'Mais visibilidade',
+    description: 'Destaque sua loja para novos clientes'
+  },
+  {
+    icon: Headphones,
+    title: 'Suporte dedicado',
+    description: 'Equipe pronta para ajudar seu negócio'
+  },
+  {
+    icon: Shield,
+    title: 'Pagamentos seguros',
+    description: 'Receba com segurança e pontualidade'
+  },
+  {
+    icon: Store,
+    title: 'Gestão completa',
+    description: 'Painel para gerenciar pedidos e produtos'
+  },
+];
+
 export default function StoreRegister() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const form = useForm<StoreForm>({
     resolver: zodResolver(storeSchema),
@@ -89,30 +127,97 @@ export default function StoreRegister() {
       return;
     }
 
-    toast.success('Empresa cadastrada com sucesso! Aguarde a aprovação.');
-    navigate('/store/dashboard');
+    setIsSuccess(true);
   };
+
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen bg-primary flex items-center justify-center p-4">
+        <Card className="max-w-md w-full text-center">
+          <CardContent className="pt-8 pb-6">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-12 h-12 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Cadastro Enviado!</h2>
+            <p className="text-muted-foreground mb-6">
+              Sua empresa foi cadastrada com sucesso. Nossa equipe irá analisar seu cadastro e você receberá uma confirmação em até 24 horas.
+            </p>
+            <div className="space-y-3">
+              <Button onClick={() => navigate('/store/dashboard')} className="w-full">
+                Ir para o Painel
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/')} className="w-full">
+                Voltar para Home
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 bg-card border-b border-border">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-primary text-primary-foreground border-b border-primary/20">
         <div className="container mx-auto px-4 py-3 flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => navigate(-1)}
+            className="text-primary-foreground hover:bg-primary-foreground/10"
+          >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <Logo size="sm" />
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 max-w-2xl">
-        <Card>
-          <CardHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <Building2 className="w-8 h-8 text-primary" />
-            </div>
-            <CardTitle className="text-2xl">Cadastrar Empresa</CardTitle>
+      {/* Hero Section */}
+      <section className="bg-primary text-primary-foreground py-12 px-4">
+        <div className="container mx-auto max-w-4xl text-center">
+          <div className="inline-flex items-center gap-2 bg-primary-foreground/20 px-4 py-2 rounded-full mb-6">
+            <Building2 className="w-5 h-5" />
+            <span className="text-sm font-medium">Para Empresas</span>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">
+            Faça parte do Comanda
+          </h1>
+          <p className="text-lg text-primary-foreground/90 max-w-2xl mx-auto">
+            Cadastre sua empresa e comece a vender para milhares de clientes na sua região. 
+            Aumente seu faturamento com nossa plataforma.
+          </p>
+        </div>
+      </section>
+
+      {/* Benefits Grid */}
+      <section className="py-10 px-4 bg-muted/50">
+        <div className="container mx-auto max-w-5xl">
+          <h2 className="text-xl font-semibold text-center mb-8">Por que vender no Comanda?</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {benefits.map((benefit, index) => (
+              <div 
+                key={index} 
+                className="bg-card p-4 rounded-xl border border-border text-center"
+              >
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <benefit.icon className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-sm mb-1">{benefit.title}</h3>
+                <p className="text-xs text-muted-foreground">{benefit.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Registration Form */}
+      <main className="container mx-auto px-4 py-8 max-w-2xl">
+        <Card className="border-2">
+          <CardHeader className="text-center pb-4">
+            <CardTitle className="text-2xl">Cadastre sua Empresa</CardTitle>
             <CardDescription>
-              Preencha os dados da sua empresa para começar a vender no Comanda
+              Preencha os dados abaixo para começar a vender
             </CardDescription>
           </CardHeader>
 
@@ -120,8 +225,8 @@ export default function StoreRegister() {
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
               {/* Dados da Empresa */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-lg flex items-center gap-2 text-primary">
+                  <Building2 className="w-5 h-5" />
                   Dados da Empresa
                 </h3>
 
@@ -173,8 +278,8 @@ export default function StoreRegister() {
 
               {/* Contato */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
-                  <Phone className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-lg flex items-center gap-2 text-primary">
+                  <Phone className="w-5 h-5" />
                   Contato
                 </h3>
 
@@ -208,8 +313,8 @@ export default function StoreRegister() {
 
               {/* Endereço */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-lg flex items-center gap-2 text-primary">
+                  <MapPin className="w-5 h-5" />
                   Endereço
                 </h3>
 
@@ -266,8 +371,8 @@ export default function StoreRegister() {
 
               {/* Delivery */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-lg flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-lg flex items-center gap-2 text-primary">
+                  <Clock className="w-5 h-5" />
                   Configurações de Entrega
                 </h3>
 
@@ -348,10 +453,22 @@ export default function StoreRegister() {
               >
                 {isLoading ? 'Cadastrando...' : 'Cadastrar Empresa'}
               </Button>
+
+              <p className="text-center text-sm text-muted-foreground">
+                Já tem uma empresa cadastrada?{' '}
+                <Link to="/auth" className="text-primary hover:underline font-medium">
+                  Faça login
+                </Link>
+              </p>
             </form>
           </CardContent>
         </Card>
       </main>
+
+      {/* Footer */}
+      <footer className="bg-muted py-6 px-4 text-center text-sm text-muted-foreground">
+        <p>© 2024 Comanda. Todos os direitos reservados.</p>
+      </footer>
     </div>
   );
 }
