@@ -19,6 +19,7 @@ import StoreDashboard from "./pages/store/Dashboard";
 import StoreProducts from "./pages/store/Products";
 import ProductForm from "./pages/store/ProductForm";
 import StoreOrders from "./pages/store/Orders";
+import StoreSettings from "./pages/store/Settings";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="/store/products/new" element={<ProductForm />} />
               <Route path="/store/products/:id/edit" element={<ProductForm />} />
               <Route path="/store/orders" element={<StoreOrders />} />
+              <Route path="/store/settings" element={<StoreSettings />} />
               
               {/* Admin routes */}
               <Route path="/admin" element={<AdminDashboard />} />
