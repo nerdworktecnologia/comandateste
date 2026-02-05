@@ -4,6 +4,7 @@ import { HeroSlider } from '@/components/home/HeroSlider';
 import { CategoryTabs } from '@/components/home/CategoryTabs';
 import { StoreCard } from '@/components/home/StoreCard';
 import { ProductCard } from '@/components/home/ProductCard';
+import { BusinessBanner } from '@/components/home/BusinessBanner';
 import { ChevronRight, Flame, Clock, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { CategoryType, Store, Product } from '@/types';
@@ -304,6 +305,11 @@ const Index = () => {
             />
           ))}
         </div>
+      </section>
+
+      {/* Business Banner */}
+      <section>
+        <BusinessBanner />
       </section>
     </div>
   );
