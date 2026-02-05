@@ -164,6 +164,24 @@ export interface Review {
   created_at: string;
 }
 
+export interface Coupon {
+  id: string;
+  store_id: string;
+  code: string;
+  description: string | null;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  min_order_value: number;
+  max_discount: number | null;
+  usage_limit: number | null;
+  usage_count: number;
+  is_active: boolean;
+  valid_from: string;
+  valid_until: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface SlideContent {
   id: number;
   title: string;

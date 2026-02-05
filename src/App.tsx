@@ -20,6 +20,7 @@ import StoreProducts from "./pages/store/Products";
 import ProductForm from "./pages/store/ProductForm";
 import StoreOrders from "./pages/store/Orders";
 import StoreSettings from "./pages/store/Settings";
+import StoreCoupons from "./pages/store/Coupons";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/store/products/new" element={<ProductForm />} />
               <Route path="/store/products/:id/edit" element={<ProductForm />} />
               <Route path="/store/orders" element={<StoreOrders />} />
+              <Route path="/store/coupons" element={<StoreCoupons />} />
               <Route path="/store/settings" element={<StoreSettings />} />
               
               {/* Admin routes */}
