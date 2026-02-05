@@ -458,46 +458,54 @@ export default function StoreDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData}>
-                      <defs>
-                        <linearGradient id="colorFaturamento" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis 
-                        dataKey="date" 
-                        tick={{ fontSize: 12 }} 
-                        tickLine={false}
-                        className="text-muted-foreground"
-                      />
-                      <YAxis 
-                        tick={{ fontSize: 12 }} 
-                        tickLine={false}
-                        tickFormatter={(value) => `R$${value}`}
-                        className="text-muted-foreground"
-                      />
-                      <Tooltip 
-                        formatter={(value: number) => [formatCurrency(value), 'Faturamento']}
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))', 
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                        }}
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="faturamento" 
-                        stroke="hsl(var(--primary))" 
-                        fillOpacity={1} 
-                        fill="url(#colorFaturamento)" 
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
+                {chartData.some(d => d.faturamento > 0) ? (
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData}>
+                        <defs>
+                          <linearGradient id="colorFaturamento" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 12 }} 
+                          tickLine={false}
+                          className="text-muted-foreground"
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 12 }} 
+                          tickLine={false}
+                          tickFormatter={(value) => `R$${value}`}
+                          className="text-muted-foreground"
+                        />
+                        <Tooltip 
+                          formatter={(value: number) => [formatCurrency(value), 'Faturamento']}
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--card))', 
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px',
+                          }}
+                        />
+                        <Area 
+                          type="monotone" 
+                          dataKey="faturamento" 
+                          stroke="hsl(var(--primary))" 
+                          fillOpacity={1} 
+                          fill="url(#colorFaturamento)" 
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-64 flex flex-col items-center justify-center text-muted-foreground">
+                    <DollarSign className="w-12 h-12 mb-4 opacity-50" />
+                    <p className="font-medium">Nenhuma venda registrada</p>
+                    <p className="text-sm">Os dados aparecerão aqui quando você tiver pedidos</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -510,37 +518,45 @@ export default function StoreDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis 
-                        dataKey="date" 
-                        tick={{ fontSize: 12 }} 
-                        tickLine={false}
-                        className="text-muted-foreground"
-                      />
-                      <YAxis 
-                        tick={{ fontSize: 12 }} 
-                        tickLine={false}
-                        className="text-muted-foreground"
-                      />
-                      <Tooltip 
-                        formatter={(value: number) => [value, 'Pedidos']}
-                        contentStyle={{ 
-                          backgroundColor: 'hsl(var(--card))', 
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                        }}
-                      />
-                      <Bar 
-                        dataKey="pedidos" 
-                        fill="hsl(var(--accent))" 
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                {chartData.some(d => d.pedidos > 0) ? (
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 12 }} 
+                          tickLine={false}
+                          className="text-muted-foreground"
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 12 }} 
+                          tickLine={false}
+                          className="text-muted-foreground"
+                        />
+                        <Tooltip 
+                          formatter={(value: number) => [value, 'Pedidos']}
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--card))', 
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px',
+                          }}
+                        />
+                        <Bar 
+                          dataKey="pedidos" 
+                          fill="hsl(var(--accent))" 
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-64 flex flex-col items-center justify-center text-muted-foreground">
+                    <ShoppingCart className="w-12 h-12 mb-4 opacity-50" />
+                    <p className="font-medium">Nenhum pedido ainda</p>
+                    <p className="text-sm">Seus pedidos aparecerão aqui</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
