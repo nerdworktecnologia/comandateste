@@ -12,6 +12,7 @@ import Checkout from "./pages/Checkout";
 import CustomerOrders from "./pages/Orders";
 import StorePage from "./pages/StorePage";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
 
 // Store pages
 import StoreRegister from "./pages/store/Register";
@@ -39,6 +40,7 @@ const App = () => (
           <CartProvider>
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/orders" element={<CustomerOrders />} />
               
