@@ -1,19 +1,19 @@
 import { Star, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Store } from '@/types';
 
 interface StoreCardProps {
   store: Store;
-  onClick?: () => void;
 }
 
-export function StoreCard({ store, onClick }: StoreCardProps) {
+export function StoreCard({ store }: StoreCardProps) {
   return (
-    <Card 
-      className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow group border-border"
-      onClick={onClick}
-    >
+    <Link to={`/loja/${store.slug}`}>
+      <Card 
+        className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow group border-border"
+      >
       <div className="relative h-32 bg-muted">
         {store.banner_url ? (
           <img 
@@ -78,5 +78,6 @@ export function StoreCard({ store, onClick }: StoreCardProps) {
         </div>
       </CardContent>
     </Card>
+    </Link>
   );
 }
