@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, Package, ClipboardList, Settings, 
-  Plus, TrendingUp, Clock, Star, DollarSign,
-  ChevronRight, Store, Users, LogOut
+  Plus, Clock, Star, DollarSign,
+  ChevronRight, Store, LogOut, TrendingUp, ShoppingCart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,9 +11,57 @@ import { Badge } from '@/components/ui/badge';
 import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, 
+  ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend
+} from 'recharts';
 import type { Store as StoreType, Order } from '@/types';
+
+interface DashboardStats {
+  ordersToday: number;
+  revenueToday: number;
+  ordersWeek: number;
+  revenueWeek: number;
+  ordersMonth: number;
+  revenueMonth: number;
+  productsCount: number;
+  pendingOrders: number;
+}
+
+interface ChartData {
+  date: string;
+  pedidos: number;
+  faturamento: number;
+}
+
+interface StatusData {
+  name: string;
+  value: number;
+  color: string;
+}
+
+const STATUS_COLORS: Record<string, string> = {
+  pending: '#eab308',
+  confirmed: '#3b82f6',
+  preparing: '#f97316',
+  ready: '#22c55e',
+  picked_up: '#a855f7',
+  delivering: '#6366f1',
+  delivered: '#16a34a',
+  cancelled: '#ef4444',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  pending: 'Pendente',
+  confirmed: 'Confirmado',
+  preparing: 'Preparando',
+  ready: 'Pronto',
+  picked_up: 'Retirado',
+  delivering: 'Em entrega',
+  delivered: 'Entregue',
+  cancelled: 'Cancelado',
+};
 
 export default function StoreDashboard() {
   const navigate = useNavigate();
@@ -21,8 +69,19 @@ export default function StoreDashboard() {
   const [store, setStore] = useState<StoreType | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats>({
+    ordersToday: 0,
+    revenueToday: 0,
+    ordersWeek: 0,
+    revenueWeek: 0,
+    ordersMonth: 0,
+    revenueMonth: 0,
+    productsCount: 0,
+    pendingOrders: 0,
+  });
+  const [chartData, setChartData] = useState<ChartData[]>([]);
+  const [statusData, setStatusData] = useState<StatusData[]>([]);
 
-  // Enable real-time notifications for new orders
   useOrderNotifications({ 
     storeId: store?.id, 
     enabled: !!store && store.status === 'approved' 
@@ -33,7 +92,6 @@ export default function StoreDashboard() {
       navigate('/auth');
       return;
     }
-
     fetchStoreData();
   }, [user, navigate]);
 
@@ -52,26 +110,137 @@ export default function StoreDashboard() {
 
     if (storeData) {
       setStore(storeData as StoreType);
-
-      // Fetch recent orders
-      const { data: ordersData } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('store_id', storeData.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (ordersData) {
-        setOrders(ordersData as Order[]);
-      }
+      await Promise.all([
+        fetchOrders(storeData.id),
+        fetchStats(storeData.id),
+        fetchChartData(storeData.id),
+      ]);
     }
 
     setLoading(false);
   };
 
+  const fetchOrders = async (storeId: string) => {
+    const { data: ordersData } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('store_id', storeId)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (ordersData) {
+      setOrders(ordersData as Order[]);
+    }
+  };
+
+  const fetchStats = async (storeId: string) => {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay())).toISOString();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+    // Get all orders for this store
+    const { data: allOrders } = await supabase
+      .from('orders')
+      .select('total, status, created_at')
+      .eq('store_id', storeId);
+
+    // Get products count
+    const { count: productsCount } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('store_id', storeId);
+
+    if (allOrders) {
+      const ordersArray = allOrders as { total: number; status: string; created_at: string }[];
+      
+      // Calculate stats
+      const ordersToday = ordersArray.filter(o => o.created_at >= startOfToday && o.status !== 'cancelled');
+      const ordersWeek = ordersArray.filter(o => o.created_at >= startOfWeek && o.status !== 'cancelled');
+      const ordersMonth = ordersArray.filter(o => o.created_at >= startOfMonth && o.status !== 'cancelled');
+      const pendingOrders = ordersArray.filter(o => o.status === 'pending').length;
+
+      // Calculate status distribution
+      const statusCounts: Record<string, number> = {};
+      ordersArray.forEach(o => {
+        statusCounts[o.status] = (statusCounts[o.status] || 0) + 1;
+      });
+
+      const statusChartData: StatusData[] = Object.entries(statusCounts).map(([status, count]) => ({
+        name: STATUS_LABELS[status] || status,
+        value: count,
+        color: STATUS_COLORS[status] || '#888888',
+      }));
+
+      setStatusData(statusChartData);
+
+      setStats({
+        ordersToday: ordersToday.length,
+        revenueToday: ordersToday.reduce((sum, o) => sum + o.total, 0),
+        ordersWeek: ordersWeek.length,
+        revenueWeek: ordersWeek.reduce((sum, o) => sum + o.total, 0),
+        ordersMonth: ordersMonth.length,
+        revenueMonth: ordersMonth.reduce((sum, o) => sum + o.total, 0),
+        productsCount: productsCount || 0,
+        pendingOrders,
+      });
+    }
+  };
+
+  const fetchChartData = async (storeId: string) => {
+    // Get orders from the last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const { data: recentOrders } = await supabase
+      .from('orders')
+      .select('total, created_at, status')
+      .eq('store_id', storeId)
+      .gte('created_at', sevenDaysAgo.toISOString())
+      .neq('status', 'cancelled');
+
+    if (recentOrders) {
+      // Group by date
+      const dailyData: Record<string, { pedidos: number; faturamento: number }> = {};
+      
+      // Initialize all days
+      for (let i = 0; i < 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() - (6 - i));
+        const dateStr = date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' });
+        dailyData[dateStr] = { pedidos: 0, faturamento: 0 };
+      }
+
+      // Fill with actual data
+      recentOrders.forEach(order => {
+        const date = new Date(order.created_at);
+        const dateStr = date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' });
+        if (dailyData[dateStr]) {
+          dailyData[dateStr].pedidos += 1;
+          dailyData[dateStr].faturamento += order.total;
+        }
+      });
+
+      const chartArray = Object.entries(dailyData).map(([date, data]) => ({
+        date,
+        ...data,
+      }));
+
+      setChartData(chartArray);
+    }
+  };
+
   const handleLogout = async () => {
     await signOut();
     navigate('/');
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
   };
 
   if (loading) {
@@ -184,7 +353,7 @@ export default function StoreDashboard() {
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" asChild>
-                <Link to={`/store/${store.slug}`} target="_blank">
+                <Link to={`/loja/${store.slug}`} target="_blank">
                   Ver loja
                 </Link>
               </Button>
@@ -207,17 +376,20 @@ export default function StoreDashboard() {
             </Card>
           )}
 
-          {/* Stats */}
+          {/* Stats Cards */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Pedidos Hoje</p>
-                    <p className="text-2xl font-bold">0</p>
+                    <p className="text-2xl font-bold">{stats.ordersToday}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {stats.ordersWeek} esta semana
+                    </p>
                   </div>
                   <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                    <ClipboardList className="w-5 h-5 text-primary" />
+                    <ShoppingCart className="w-5 h-5 text-primary" />
                   </div>
                 </div>
               </CardContent>
@@ -228,7 +400,10 @@ export default function StoreDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Faturamento Hoje</p>
-                    <p className="text-2xl font-bold">R$ 0,00</p>
+                    <p className="text-2xl font-bold">{formatCurrency(stats.revenueToday)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatCurrency(stats.revenueWeek)} esta semana
+                    </p>
                   </div>
                   <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center">
                     <DollarSign className="w-5 h-5 text-accent" />
@@ -242,7 +417,10 @@ export default function StoreDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Avaliação</p>
-                    <p className="text-2xl font-bold">{store.rating.toFixed(1)}</p>
+                    <p className="text-2xl font-bold">{(store.rating || 0).toFixed(1)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {store.total_reviews || 0} avaliações
+                    </p>
                   </div>
                   <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                     <Star className="w-5 h-5 text-primary fill-primary" />
@@ -256,10 +434,208 @@ export default function StoreDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-muted-foreground">Produtos</p>
-                    <p className="text-2xl font-bold">0</p>
+                    <p className="text-2xl font-bold">{stats.productsCount}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {stats.pendingOrders} pedidos pendentes
+                    </p>
                   </div>
                   <div className="w-10 h-10 bg-secondary/10 rounded-full flex items-center justify-center">
                     <Package className="w-5 h-5 text-secondary-foreground" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Charts */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Revenue Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  Faturamento - Últimos 7 dias
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData}>
+                      <defs>
+                        <linearGradient id="colorFaturamento" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }} 
+                        tickLine={false}
+                        className="text-muted-foreground"
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }} 
+                        tickLine={false}
+                        tickFormatter={(value) => `R$${value}`}
+                        className="text-muted-foreground"
+                      />
+                      <Tooltip 
+                        formatter={(value: number) => [formatCurrency(value), 'Faturamento']}
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                        }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="faturamento" 
+                        stroke="hsl(var(--primary))" 
+                        fillOpacity={1} 
+                        fill="url(#colorFaturamento)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Orders Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5" />
+                  Pedidos - Últimos 7 dias
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 12 }} 
+                        tickLine={false}
+                        className="text-muted-foreground"
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 12 }} 
+                        tickLine={false}
+                        className="text-muted-foreground"
+                      />
+                      <Tooltip 
+                        formatter={(value: number) => [value, 'Pedidos']}
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                        }}
+                      />
+                      <Bar 
+                        dataKey="pedidos" 
+                        fill="hsl(var(--accent))" 
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Status Distribution & Monthly Stats */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Status Pie Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Distribuição de Status</CardTitle>
+                <CardDescription>Status dos pedidos realizados</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {statusData.length > 0 ? (
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={statusData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {statusData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: number) => [value, 'Pedidos']}
+                          contentStyle={{ 
+                            backgroundColor: 'hsl(var(--card))', 
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px',
+                          }}
+                        />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-muted-foreground">
+                    Nenhum pedido para exibir
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Monthly Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Resumo do Mês</CardTitle>
+                <CardDescription>Métricas do mês atual</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                      <ShoppingCart className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total de Pedidos</p>
+                      <p className="text-lg font-bold">{stats.ordersMonth}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-accent/10 rounded-full flex items-center justify-center">
+                      <DollarSign className="w-5 h-5 text-accent" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Faturamento Total</p>
+                      <p className="text-lg font-bold">{formatCurrency(stats.revenueMonth)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-secondary/10 rounded-full flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5 text-secondary-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Ticket Médio</p>
+                      <p className="text-lg font-bold">
+                        {stats.ordersMonth > 0 
+                          ? formatCurrency(stats.revenueMonth / stats.ordersMonth) 
+                          : formatCurrency(0)
+                        }
+                      </p>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -336,8 +712,12 @@ export default function StoreDashboard() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium">R$ {order.total.toFixed(2)}</p>
-                        <Badge variant="outline">{order.status}</Badge>
+                        <p className="font-medium">{formatCurrency(order.total)}</p>
+                        <Badge 
+                          style={{ backgroundColor: STATUS_COLORS[order.status] + '20', color: STATUS_COLORS[order.status] }}
+                        >
+                          {STATUS_LABELS[order.status] || order.status}
+                        </Badge>
                       </div>
                     </div>
                   ))}
