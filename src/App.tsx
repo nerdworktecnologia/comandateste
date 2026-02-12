@@ -16,6 +16,7 @@ import StorePage from "./pages/StorePage";
 import NotFound from "./pages/NotFound";
 import ForBusiness from "./pages/ForBusiness";
 import Profile from "./pages/Profile";
+import Search from "./pages/Search";
 
 // Legal pages
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
@@ -66,6 +67,7 @@ const App = () => {
             <CartProvider>
               <Routes>
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/search" element={<Search />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/orders" element={<CustomerOrders />} />
