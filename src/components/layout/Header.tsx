@@ -46,6 +46,17 @@ export function Header() {
                     <Link to="/for-drivers" className="block py-2 px-4 rounded-lg hover:bg-muted text-secondary">
                       Seja Entregador
                     </Link>
+                    <hr className="my-4" />
+                    <p className="px-4 text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Legal</p>
+                    <Link to="/privacy" className="block py-2 px-4 rounded-lg hover:bg-muted text-sm text-muted-foreground">
+                      Política de Privacidade
+                    </Link>
+                    <Link to="/terms" className="block py-2 px-4 rounded-lg hover:bg-muted text-sm text-muted-foreground">
+                      Termos de Uso
+                    </Link>
+                    <Link to="/partner-contract" className="block py-2 px-4 rounded-lg hover:bg-muted text-sm text-muted-foreground">
+                      Contrato de Parceria
+                    </Link>
                   </nav>
                 </div>
               </SheetContent>
