@@ -61,6 +61,9 @@ export default {
           DEFAULT: "hsl(var(--header-background))",
           foreground: "hsl(var(--header-foreground))",
           text: "hsl(var(--header-text))",
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
+        info: "hsl(var(--info))",
         },
       },
       borderRadius: {

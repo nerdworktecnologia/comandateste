@@ -32,6 +32,9 @@ import StoreOrders from "./pages/store/Orders";
 import StoreSettings from "./pages/store/Settings";
 import StoreCoupons from "./pages/store/Coupons";
 import DriverRegister from "./pages/driver/Register";
+import DriverDashboard from "./pages/driver/Dashboard";
+import DeliveryMap from "./pages/driver/DeliveryMap";
+import DriverEarnings from "./pages/driver/Earnings";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -93,6 +96,9 @@ const App = () => {
                 
                 {/* Driver routes */}
                 <Route path="/driver/register" element={<DriverRegister />} />
+                <Route path="/driver/dashboard" element={<DriverDashboard />} />
+                <Route path="/driver/map" element={<DeliveryMap />} />
+                <Route path="/driver/earnings" element={<DriverEarnings />} />
                 <Route path="/for-drivers" element={<DriverRegister />} />
                 
                 {/* Admin routes */}
