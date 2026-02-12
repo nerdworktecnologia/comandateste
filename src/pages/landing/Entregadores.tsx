@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { 
   Truck, ArrowRight, CheckCircle, Zap, Shield, 
-  DollarSign, Clock, MapPin, Smartphone, BarChart3
+  DollarSign, Clock, MapPin, Smartphone, BarChart3, Star, Quote
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -188,6 +188,37 @@ export default function EntregadoresLanding() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-16 md:py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-4">O que nossos entregadores dizem</h2>
+            <p className="text-muted-foreground">Histórias reais de quem já entrega com a gente.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {[
+              { name: 'Carlos S.', city: 'São Paulo', text: 'Consigo fazer meus horários e ganhar bem. O app é muito fácil de usar e os pedidos aparecem rápido.', rating: 5 },
+              { name: 'Ana L.', city: 'Rio de Janeiro', text: 'O melhor é a flexibilidade. Trabalho quando quero e o pagamento cai certinho toda semana.', rating: 5 },
+              { name: 'Pedro M.', city: 'Belo Horizonte', text: 'A navegação integrada facilita muito. Não preciso trocar de app pra encontrar os endereços.', rating: 4 },
+            ].map((t) => (
+              <Card key={t.name} className="border border-border/50 hover:shadow-lg transition-shadow duration-300">
+                <CardContent className="p-6">
+                  <Quote className="w-8 h-8 text-primary/20 mb-3" />
+                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed italic">"{t.text}"</p>
+                  <div className="flex items-center gap-1 mb-2">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className={`w-3.5 h-3.5 ${i < t.rating ? 'text-primary fill-primary' : 'text-muted-foreground/30'}`} />
+                    ))}
+                  </div>
+                  <p className="text-sm font-semibold">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.city}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
