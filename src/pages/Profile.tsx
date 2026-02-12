@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, MapPin, Save, LogOut, ChevronLeft, Camera } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Save, LogOut, ChevronLeft, Camera, CreditCard } from 'lucide-react';
+import { formatCpf, validateCpf } from '@/lib/cpf';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -50,12 +51,24 @@ const Profile = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'cpf') {
+      setFormData(prev => ({ ...prev, cpf: formatCpf(value) }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
+
+  const [cpfError, setCpfError] = useState('');
 
   const handleSave = async () => {
     if (!user) return;
-    
+
+    // Validate CPF if filled
+    if (formData.cpf && !validateCpf(formData.cpf)) {
+      setCpfError('CPF inválido. Verifique os dígitos.');
+      return;
+    }
+    setCpfError('');
     setSaving(true);
     try {
       const { error } = await supabase
@@ -176,13 +189,21 @@ const Profile = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="cpf">CPF</Label>
-                <Input
-                  id="cpf"
-                  name="cpf"
-                  placeholder="000.000.000-00"
-                  value={formData.cpf}
-                  onChange={handleInputChange}
-                />
+                <div className="relative">
+                  <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="cpf"
+                    name="cpf"
+                    placeholder="000.000.000-00"
+                    value={formData.cpf}
+                    onChange={handleInputChange}
+                    className="pl-10"
+                    maxLength={14}
+                  />
+                </div>
+                {cpfError && (
+                  <p className="text-sm text-destructive">{cpfError}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Telefone</Label>
