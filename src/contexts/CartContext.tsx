@@ -97,6 +97,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Check stock availability
+    if (product.stock_quantity !== null && product.stock_quantity !== undefined) {
+      const existingItem = items.find(item => item.product_id === product.id);
+      const currentQty = existingItem ? existingItem.quantity : 0;
+      const requestedTotal = currentQty + quantity;
+
+      if (requestedTotal > product.stock_quantity) {
+        if (product.stock_quantity === 0) {
+          toast.error('Produto sem estoque');
+        } else {
+          toast.error(`Estoque disponível: ${product.stock_quantity} unidade(s). Você já tem ${currentQty} no carrinho.`);
+        }
+        return;
+      }
+    }
+
     // Check if item already exists
     const existingItem = items.find(item => item.product_id === product.id);
 
@@ -132,6 +148,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (quantity <= 0) {
       await removeItem(itemId);
       return;
+    }
+
+    // Stock validation on quantity update
+    const item = items.find(i => i.id === itemId);
+    if (item && item.product.stock_quantity !== null && item.product.stock_quantity !== undefined) {
+      if (quantity > item.product.stock_quantity) {
+        toast.error(`Estoque máximo: ${item.product.stock_quantity} unidade(s)`);
+        return;
+      }
     }
 
     const { error } = await supabase
