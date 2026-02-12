@@ -5,7 +5,7 @@ import { CategoryTabs } from '@/components/home/CategoryTabs';
 import { StoreCard } from '@/components/home/StoreCard';
 import { ProductCard } from '@/components/home/ProductCard';
 import { BusinessBanner } from '@/components/home/BusinessBanner';
-import { ChevronRight, Flame, Clock, Star, TrendingUp } from 'lucide-react';
+import { ChevronRight, Flame, Clock, Star, TrendingUp, Store as StoreIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,7 +28,6 @@ const Index = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch categories to map category_id to category_type
       const { data: categoriesData } = await supabase
         .from('categories')
         .select('id, category_type')
@@ -39,39 +38,30 @@ const Index = () => {
         categoryMap.set(cat.id, cat.category_type);
       });
 
-      // Fetch all approved stores
       let storesQuery = supabase
         .from('stores')
         .select('*')
         .eq('status', 'approved')
         .order('rating', { ascending: false });
 
-      // Filter by category if not 'all'
       if (activeCategory !== 'all') {
         const categoryIds = Array.from(categoryMap.entries())
           .filter(([_, type]) => type === activeCategory)
           .map(([id]) => id);
-        
         if (categoryIds.length > 0) {
           storesQuery = storesQuery.in('category_id', categoryIds);
         }
       }
 
       const { data: storesData } = await storesQuery;
-
       const allStores = (storesData || []) as Store[];
       setStores(allStores);
-      
-      // Featured stores (is_featured = true, sorted by rating)
       setFeaturedStores(allStores.filter(s => s.is_featured).slice(0, 6));
-      
-      // Top rated stores (rating >= 4.0, sorted by rating)
       setTopRatedStores(allStores.filter(s => (s.rating || 0) >= 4.0).slice(0, 6));
 
-      // Fetch near expiry products (within 7 days)
       const sevenDaysFromNow = new Date();
       sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-      
+
       let expiryQuery = supabase
         .from('products')
         .select('*')
@@ -82,12 +72,10 @@ const Index = () => {
         .order('expiry_date', { ascending: true })
         .limit(8);
 
-      // Filter products by category
       if (activeCategory !== 'all') {
         const categoryIds = Array.from(categoryMap.entries())
           .filter(([_, type]) => type === activeCategory)
           .map(([id]) => id);
-        
         if (categoryIds.length > 0) {
           expiryQuery = expiryQuery.in('category_id', categoryIds);
         }
@@ -96,7 +84,6 @@ const Index = () => {
       const { data: expiryProducts } = await expiryQuery;
       setNearExpiryProducts((expiryProducts || []) as Product[]);
 
-      // Fetch best sellers
       let bestSellersQuery = supabase
         .from('products')
         .select('*')
@@ -104,12 +91,10 @@ const Index = () => {
         .order('sales_count', { ascending: false })
         .limit(8);
 
-      // Filter best sellers by category
       if (activeCategory !== 'all') {
         const categoryIds = Array.from(categoryMap.entries())
           .filter(([_, type]) => type === activeCategory)
           .map(([id]) => id);
-        
         if (categoryIds.length > 0) {
           bestSellersQuery = bestSellersQuery.in('category_id', categoryIds);
         }
@@ -124,10 +109,131 @@ const Index = () => {
     }
   };
 
-  const StoreSkeletons = () => (
+  return (
+    <div className="space-y-0 pb-20 md:pb-0">
+      {/* Hero Slider */}
+      <div className="container mx-auto px-4 pt-4">
+        <HeroSlider />
+      </div>
+
+      {/* Category Tabs */}
+      <div className="container mx-auto px-4 py-4">
+        <CategoryTabs 
+          activeCategory={activeCategory} 
+          onCategoryChange={setActiveCategory} 
+        />
+      </div>
+
+      {/* ═══════ PART 1: PRODUCTS ═══════ */}
+      <div className="bg-background">
+        {/* Near Expiry Products */}
+        {(loading || nearExpiryProducts.length > 0) && (
+          <section className="container mx-auto px-4 py-6 animate-fade-in">
+            <SectionHeader icon={Clock} iconColor="text-accent" title="Próximo da Validade" subtitle="Descontos especiais" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
+              {loading ? <ProductSkeletons /> : nearExpiryProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Best Sellers */}
+        {(loading || bestSellers.length > 0) && (
+          <section className="container mx-auto px-4 py-6 animate-fade-in" style={{ animationDelay: '0.1s', opacity: 0 }}>
+            <SectionHeader icon={Flame} iconColor="text-primary" title="Mais Vendidos" subtitle="Os favoritos dos clientes" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
+              {loading ? <ProductSkeletons /> : bestSellers.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+
+      {/* Divider */}
+      <div className="h-2 bg-muted/50" />
+
+      {/* ═══════ PART 2: STORES ═══════ */}
+      <div className="bg-background">
+        {/* Featured Stores */}
+        {(loading || featuredStores.length > 0) && (
+          <section className="container mx-auto px-4 py-6 animate-fade-in" style={{ animationDelay: '0.15s', opacity: 0 }}>
+            <SectionHeader icon={Star} iconColor="text-primary" title="Lojas em Destaque" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {loading ? <StoreSkeletons /> : featuredStores.map((store) => (
+                <StoreCard key={store.id} store={store} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Top Rated */}
+        {(loading || topRatedStores.length > 0) && (
+          <section className="container mx-auto px-4 py-6 animate-fade-in" style={{ animationDelay: '0.2s', opacity: 0 }}>
+            <SectionHeader icon={TrendingUp} iconColor="text-accent" title="Mais Bem Avaliadas" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {loading ? <StoreSkeletons /> : topRatedStores.map((store) => (
+                <StoreCard key={store.id} store={store} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* All Stores */}
+        <section className="container mx-auto px-4 py-6 animate-fade-in" style={{ animationDelay: '0.25s', opacity: 0 }}>
+          <SectionHeader icon={StoreIcon} iconColor="text-muted-foreground" title="Todas as Lojas" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading ? <StoreSkeletons /> : stores.map((store) => (
+              <StoreCard key={store.id} store={store} />
+            ))}
+            {!loading && stores.length === 0 && (
+              <div className="col-span-full text-center py-12 text-muted-foreground">
+                <StoreIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                <p>Nenhuma loja disponível no momento</p>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+
+      {/* Divider */}
+      <div className="h-2 bg-muted/50" />
+
+      {/* ═══════ PART 3: FOR BUSINESS ═══════ */}
+      <div className="container mx-auto px-4 py-8">
+        <BusinessBanner />
+      </div>
+    </div>
+  );
+};
+
+/* ── Sub-components ── */
+
+function SectionHeader({ icon: Icon, iconColor, title, subtitle }: { icon: React.ElementType; iconColor: string; title: string; subtitle?: string }) {
+  return (
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-2.5">
+        <div className={`w-8 h-8 rounded-lg bg-muted flex items-center justify-center`}>
+          <Icon className={`w-4.5 h-4.5 ${iconColor}`} />
+        </div>
+        <div>
+          <h2 className="text-base font-semibold leading-tight">{title}</h2>
+          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+        </div>
+      </div>
+      <Button variant="ghost" size="sm" className="text-primary text-xs gap-1">
+        Ver todos <ChevronRight className="w-3.5 h-3.5" />
+      </Button>
+    </div>
+  );
+}
+
+function StoreSkeletons() {
+  return (
     <>
       {[1, 2, 3].map((i) => (
-        <div key={i} className="rounded-lg border bg-card overflow-hidden">
+        <div key={i} className="rounded-xl border bg-card overflow-hidden">
           <Skeleton className="h-32 w-full" />
           <div className="p-4 space-y-2">
             <Skeleton className="h-4 w-3/4" />
@@ -142,11 +248,13 @@ const Index = () => {
       ))}
     </>
   );
+}
 
-  const ProductSkeletons = () => (
+function ProductSkeletons() {
+  return (
     <>
       {[1, 2, 3, 4].map((i) => (
-        <div key={i} className="rounded-lg border bg-card overflow-hidden">
+        <div key={i} className="rounded-xl border bg-card overflow-hidden">
           <Skeleton className="h-32 w-full" />
           <div className="p-3 space-y-2">
             <Skeleton className="h-4 w-3/4" />
@@ -156,141 +264,6 @@ const Index = () => {
       ))}
     </>
   );
-
-  return (
-    <div className="container mx-auto px-4 py-4 space-y-6">
-      {/* Hero Slider */}
-      <HeroSlider />
-
-      {/* Category Tabs */}
-      <section>
-        <CategoryTabs 
-          activeCategory={activeCategory} 
-          onCategoryChange={setActiveCategory} 
-        />
-      </section>
-
-      {/* Near Expiry Products - Special Deals */}
-      {(loading || nearExpiryProducts.length > 0) && (
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-secondary" />
-              <h2 className="text-lg font-semibold">Próximo da Validade</h2>
-            </div>
-            <Button variant="ghost" size="sm" className="text-primary">
-              Ver todos <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {loading ? <ProductSkeletons /> : nearExpiryProducts.map((product) => (
-              <ProductCard 
-                key={product.id} 
-                product={product}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Best Sellers */}
-      {(loading || bestSellers.length > 0) && (
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Flame className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-semibold">Mais Vendidos</h2>
-            </div>
-            <Button variant="ghost" size="sm" className="text-primary">
-              Ver todos <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {loading ? <ProductSkeletons /> : bestSellers.map((product) => (
-              <ProductCard 
-                key={product.id} 
-                product={product}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Top Rated Stores */}
-      {(loading || topRatedStores.length > 0) && (
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-accent" />
-              <h2 className="text-lg font-semibold">Mais Bem Avaliadas</h2>
-            </div>
-            <Button variant="ghost" size="sm" className="text-primary">
-              Ver todas <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {loading ? <StoreSkeletons /> : topRatedStores.map((store) => (
-              <StoreCard 
-                key={store.id} 
-                store={store}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Featured Stores */}
-      {(loading || featuredStores.length > 0) && (
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Star className="w-5 h-5 text-secondary" />
-              <h2 className="text-lg font-semibold">Lojas em Destaque</h2>
-            </div>
-            <Button variant="ghost" size="sm" className="text-primary">
-              Ver todas <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {loading ? <StoreSkeletons /> : featuredStores.map((store) => (
-              <StoreCard 
-                key={store.id} 
-                store={store}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* All Stores */}
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Todas as Lojas</h2>
-          <Button variant="ghost" size="sm" className="text-primary">
-            Ver todas <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {loading ? <StoreSkeletons /> : stores.map((store) => (
-            <StoreCard 
-              key={store.id} 
-              store={store}
-            />
-          ))}
-          {!loading && stores.length === 0 && (
-            <div className="col-span-full text-center py-8 text-muted-foreground">
-              Nenhuma loja disponível no momento
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Business Banner */}
-      <section>
-        <BusinessBanner />
-      </section>
-    </div>
-  );
-};
+}
 
 export default Index;
