@@ -2,8 +2,9 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Store, TrendingUp, Users, Smartphone, ArrowRight, 
-  CheckCircle, Zap, Shield, BarChart3, Package, Settings, Star, Quote
+  CheckCircle, Zap, Shield, BarChart3, Package, Settings, Star, Quote, HelpCircle
 } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Logo } from '@/components/Logo';
@@ -241,6 +242,48 @@ export default function EmpresasLanding() {
                 </Card>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-16 md:py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-12">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <HelpCircle className="w-6 h-6 text-primary" />
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-4">Perguntas frequentes</h2>
+              <p className="text-muted-foreground">Tire suas dúvidas sobre vender no Comanda.</p>
+            </div>
+            <Accordion type="single" collapsible className="space-y-3">
+              {[
+                { q: 'Quanto custa para cadastrar minha empresa?', a: 'O cadastro é gratuito. Cobramos apenas uma pequena comissão sobre cada pedido realizado.' },
+                { q: 'Quanto tempo leva para ser aprovado?', a: 'A análise do cadastro leva em média 24 a 48 horas úteis. Você será notificado por e-mail assim que for aprovado.' },
+                { q: 'Posso vender qualquer tipo de produto?', a: 'Sim! Aceitamos supermercados, farmácias, pet shops, restaurantes, cosméticos e muito mais.' },
+                { q: 'Como funciona a entrega dos pedidos?', a: 'Você pode usar nossos entregadores parceiros ou realizar entregas próprias. A escolha é sua.' },
+                { q: 'Tenho acesso a relatórios de vendas?', a: 'Sim, o painel oferece dashboard completo com vendas, pedidos, avaliações e relatórios financeiros.' },
+                { q: 'Posso criar cupons de desconto?', a: 'Sim! Você pode criar cupons personalizados com desconto fixo ou percentual para atrair mais clientes.' },
+              ].map((faq, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-30px' }}
+                  transition={{ duration: 0.4, delay: index * 0.08, ease: 'easeOut' }}
+                >
+                  <AccordionItem value={`faq-${index}`} className="border border-border/50 rounded-xl px-5 data-[state=open]:border-primary/20 transition-colors">
+                    <AccordionTrigger className="text-sm font-medium text-left hover:no-underline py-4">
+                      {faq.q}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-sm text-muted-foreground pb-4">
+                      {faq.a}
+                    </AccordionContent>
+                  </AccordionItem>
+                </motion.div>
+              ))}
+            </Accordion>
           </div>
         </div>
       </section>
