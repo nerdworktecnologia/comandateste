@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, MapPin, Save, LogOut, ChevronLeft, Camera, CreditCard } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Save, LogOut, ChevronLeft, Camera, CreditCard, Loader2 } from 'lucide-react';
 import { formatCpf, validateCpf } from '@/lib/cpf';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Layout } from '@/components/layout/Layout';
+
+const formatCep = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+};
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -53,12 +59,49 @@ const Profile = () => {
     const { name, value } = e.target;
     if (name === 'cpf') {
       setFormData(prev => ({ ...prev, cpf: formatCpf(value) }));
+    } else if (name === 'zip_code') {
+      const formatted = formatCep(value);
+      setFormData(prev => ({ ...prev, zip_code: formatted }));
+      // Auto-lookup when CEP is complete (8 digits)
+      const digits = value.replace(/\D/g, '');
+      if (digits.length === 8) {
+        fetchAddressByCep(digits);
+      }
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
   const [cpfError, setCpfError] = useState('');
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepError, setCepError] = useState('');
+
+  const fetchAddressByCep = useCallback(async (cep: string) => {
+    setCepLoading(true);
+    setCepError('');
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await response.json();
+      if (data.erro) {
+        setCepError('CEP não encontrado');
+        return;
+      }
+      setFormData(prev => ({
+        ...prev,
+        address: data.logradouro || prev.address,
+        city: data.localidade || prev.city,
+        state: data.uf || prev.state,
+      }));
+      toast({
+        title: 'Endereço encontrado!',
+        description: `${data.logradouro}, ${data.localidade} - ${data.uf}`,
+      });
+    } catch {
+      setCepError('Erro ao buscar CEP');
+    } finally {
+      setCepLoading(false);
+    }
+  }, [toast]);
 
   const handleSave = async () => {
     if (!user) return;
@@ -280,13 +323,22 @@ const Profile = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="zip_code">CEP</Label>
-                <Input
-                  id="zip_code"
-                  name="zip_code"
-                  placeholder="00000-000"
-                  value={formData.zip_code}
-                  onChange={handleInputChange}
-                />
+                <div className="relative">
+                  <Input
+                    id="zip_code"
+                    name="zip_code"
+                    placeholder="00000-000"
+                    value={formData.zip_code}
+                    onChange={handleInputChange}
+                    maxLength={9}
+                  />
+                  {cepLoading && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+                {cepError && (
+                  <p className="text-sm text-destructive">{cepError}</p>
+                )}
               </div>
             </div>
           </CardContent>
