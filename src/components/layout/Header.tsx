@@ -1,7 +1,6 @@
-import { MapPin, Menu, Bell } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { MapPin, Menu } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +9,7 @@ import { GlobalSearch } from '@/components/search/GlobalSearch';
 
 export function Header() {
   const { user, profile } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header className="sticky top-0 z-40 bg-header border-b border-primary/20">
@@ -68,23 +68,19 @@ export function Header() {
           </div>
 
           {/* Location */}
-          <button className="hidden md:flex items-center gap-2 text-sm hover:bg-white/20 px-3 py-2 rounded-lg transition-colors">
+          <button 
+            onClick={() => navigate(user ? '/profile' : '/auth')}
+            className="hidden md:flex items-center gap-2 text-sm hover:bg-white/20 px-3 py-2 rounded-lg transition-colors"
+          >
             <MapPin className="w-4 h-4 text-header-text" />
             <span className="text-header-text/80">Entregar em</span>
             <span className="font-medium truncate max-w-[150px] text-header-text">
-              {profile?.address || 'Definir endereço'}
+              {profile?.address ? `${profile.address}${profile.city ? `, ${profile.city}` : ''}` : 'Definir endereço'}
             </span>
           </button>
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="relative text-header-text hover:bg-white/20">
-              <Bell className="w-5 h-5" />
-              <Badge className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center p-0 text-[10px] bg-secondary text-secondary-foreground">
-                3
-              </Badge>
-            </Button>
-            
             <CartDrawer />
 
             {user ? (
