@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import type { Order, OrderStatus, Store } from '@/types';
 
 const statusConfig: Record<OrderStatus, { label: string; color: string; icon: React.ElementType }> = {
@@ -31,6 +32,46 @@ export default function CustomerOrders() {
       return;
     }
     fetchOrders();
+
+    // Subscribe to real-time order updates
+    const channel = supabase
+      .channel('customer-orders')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `customer_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const updated = payload.new as Order;
+          setOrders((prev) =>
+            prev.map((o) => (o.id === updated.id ? { ...o, ...updated } : o))
+          );
+          const status = statusConfig[updated.status as OrderStatus];
+          if (status) {
+            toast.info(`Pedido #${updated.order_number}: ${status.label}`);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+          filter: `customer_id=eq.${user.id}`,
+        },
+        () => {
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, navigate]);
 
   const fetchOrders = async () => {
