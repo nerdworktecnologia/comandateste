@@ -18,6 +18,10 @@ import ForBusiness from "./pages/ForBusiness";
 import Profile from "./pages/Profile";
 import Search from "./pages/Search";
 
+// Landing pages
+import EntregadoresLanding from "./pages/landing/Entregadores";
+import EmpresasLanding from "./pages/landing/Empresas";
+
 // Legal pages
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
 import Terms from "./pages/legal/Terms";
@@ -85,9 +89,10 @@ const App = () => {
                 <Route path="/store/coupons" element={<StoreCoupons />} />
                 <Route path="/store/settings" element={<StoreSettings />} />
                 
-                {/* Business landing page */}
-                {/* Business landing page */}
+                {/* Landing pages */}
                 <Route path="/for-business" element={<ForBusiness />} />
+                <Route path="/empresas" element={<EmpresasLanding />} />
+                <Route path="/entregadores" element={<EntregadoresLanding />} />
                 
                 {/* Legal pages */}
                 <Route path="/privacy" element={<PrivacyPolicy />} />
@@ -99,7 +104,7 @@ const App = () => {
                 <Route path="/driver/dashboard" element={<DriverDashboard />} />
                 <Route path="/driver/map" element={<DeliveryMap />} />
                 <Route path="/driver/earnings" element={<DriverEarnings />} />
-                <Route path="/for-drivers" element={<DriverRegister />} />
+                <Route path="/for-drivers" element={<EntregadoresLanding />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminDashboard />} />
