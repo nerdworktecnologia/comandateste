@@ -2,8 +2,9 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Truck, ArrowRight, CheckCircle, Zap, Shield, 
-  DollarSign, Clock, MapPin, Smartphone, BarChart3, Star, Quote
+  DollarSign, Clock, MapPin, Smartphone, BarChart3, Star, Quote, HelpCircle, ChevronDown
 } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Logo } from '@/components/Logo';
@@ -240,6 +241,48 @@ export default function EntregadoresLanding() {
                 </Card>
               </motion.div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-16 md:py-20">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-12">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <HelpCircle className="w-6 h-6 text-primary" />
+              </div>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-4">Perguntas frequentes</h2>
+              <p className="text-muted-foreground">Tire suas dúvidas sobre ser entregador no Comanda.</p>
+            </div>
+            <Accordion type="single" collapsible className="space-y-3">
+              {[
+                { q: 'Preciso ter um veículo próprio?', a: 'Sim, você pode usar moto, bicicleta ou carro. Basta informar o tipo de veículo no cadastro.' },
+                { q: 'Como recebo meus ganhos?', a: 'Os pagamentos são feitos semanalmente via transferência bancária direto na conta cadastrada.' },
+                { q: 'Existe taxa de cadastro?', a: 'Não! O cadastro é totalmente gratuito. Você só precisa preencher seus dados e aguardar a aprovação.' },
+                { q: 'Posso escolher os horários que trabalho?', a: 'Sim, você tem total flexibilidade. Trabalhe quando e onde quiser, sem horários fixos.' },
+                { q: 'Quanto tempo leva a aprovação?', a: 'A análise do cadastro leva em média 24 a 48 horas úteis. Você será notificado assim que for aprovado.' },
+                { q: 'Preciso ter experiência com entregas?', a: 'Não é necessário ter experiência prévia. O app é intuitivo e oferece suporte completo para novos entregadores.' },
+              ].map((faq, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-30px' }}
+                  transition={{ duration: 0.4, delay: index * 0.08, ease: 'easeOut' }}
+                >
+                  <AccordionItem value={`faq-${index}`} className="border border-border/50 rounded-xl px-5 data-[state=open]:border-primary/20 transition-colors">
+                    <AccordionTrigger className="text-sm font-medium text-left hover:no-underline py-4">
+                      {faq.q}
+                    </AccordionTrigger>
+                    <AccordionContent className="text-sm text-muted-foreground pb-4">
+                      {faq.a}
+                    </AccordionContent>
+                  </AccordionItem>
+                </motion.div>
+              ))}
+            </Accordion>
           </div>
         </div>
       </section>
