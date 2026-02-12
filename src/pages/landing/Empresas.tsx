@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { 
   Store, TrendingUp, Users, Smartphone, ArrowRight, 
-  CheckCircle, Zap, Shield, BarChart3, Package, Settings
+  CheckCircle, Zap, Shield, BarChart3, Package, Settings, Star, Quote
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -189,6 +189,37 @@ export default function EmpresasLanding() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-16 md:py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-4">O que nossos parceiros dizem</h2>
+            <p className="text-muted-foreground">Empresas que já cresceram com o Comanda.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {[
+              { name: 'Mercado Bom Preço', city: 'São Paulo', text: 'Nossas vendas aumentaram 40% no primeiro mês. A plataforma é simples e os pedidos chegam em tempo real.', rating: 5 },
+              { name: 'Farmácia Saúde+', city: 'Curitiba', text: 'Gestão de produtos e pedidos muito prática. O suporte é excelente e sempre nos ajuda rápido.', rating: 5 },
+              { name: 'Pet Shop Patinha', city: 'Salvador', text: 'Conseguimos alcançar clientes que nem sabiam que existíamos. O dashboard de vendas é incrível.', rating: 4 },
+            ].map((t) => (
+              <Card key={t.name} className="border border-border/50 hover:shadow-lg transition-shadow duration-300">
+                <CardContent className="p-6">
+                  <Quote className="w-8 h-8 text-primary/20 mb-3" />
+                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed italic">"{t.text}"</p>
+                  <div className="flex items-center gap-1 mb-2">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className={`w-3.5 h-3.5 ${i < t.rating ? 'text-primary fill-primary' : 'text-muted-foreground/30'}`} />
+                    ))}
+                  </div>
+                  <p className="text-sm font-semibold">{t.name}</p>
+                  <p className="text-xs text-muted-foreground">{t.city}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
