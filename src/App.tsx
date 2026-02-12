@@ -17,6 +17,11 @@ import NotFound from "./pages/NotFound";
 import ForBusiness from "./pages/ForBusiness";
 import Profile from "./pages/Profile";
 
+// Legal pages
+import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
+import Terms from "./pages/legal/Terms";
+import PartnerContract from "./pages/legal/PartnerContract";
+
 // Store pages
 import StoreRegister from "./pages/store/Register";
 import StoreDashboard from "./pages/store/Dashboard";
@@ -76,7 +81,13 @@ const App = () => {
                 <Route path="/store/settings" element={<StoreSettings />} />
                 
                 {/* Business landing page */}
+                {/* Business landing page */}
                 <Route path="/for-business" element={<ForBusiness />} />
+                
+                {/* Legal pages */}
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/partner-contract" element={<PartnerContract />} />
                 
                 {/* Driver routes */}
                 <Route path="/driver/register" element={<DriverRegister />} />
