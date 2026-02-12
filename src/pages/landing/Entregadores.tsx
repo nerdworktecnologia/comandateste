@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { 
   Truck, ArrowRight, CheckCircle, Zap, Shield, 
   DollarSign, Clock, MapPin, Smartphone, BarChart3, Star, Quote
@@ -204,20 +205,28 @@ export default function EntregadoresLanding() {
               { name: 'Carlos S.', city: 'São Paulo', text: 'Consigo fazer meus horários e ganhar bem. O app é muito fácil de usar e os pedidos aparecem rápido.', rating: 5 },
               { name: 'Ana L.', city: 'Rio de Janeiro', text: 'O melhor é a flexibilidade. Trabalho quando quero e o pagamento cai certinho toda semana.', rating: 5 },
               { name: 'Pedro M.', city: 'Belo Horizonte', text: 'A navegação integrada facilita muito. Não preciso trocar de app pra encontrar os endereços.', rating: 4 },
-            ].map((t) => (
-              <Card key={t.name} className="border border-border/50 hover:shadow-lg transition-shadow duration-300">
-                <CardContent className="p-6">
-                  <Quote className="w-8 h-8 text-primary/20 mb-3" />
-                  <p className="text-sm text-muted-foreground mb-4 leading-relaxed italic">"{t.text}"</p>
-                  <div className="flex items-center gap-1 mb-2">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className={`w-3.5 h-3.5 ${i < t.rating ? 'text-primary fill-primary' : 'text-muted-foreground/30'}`} />
-                    ))}
-                  </div>
-                  <p className="text-sm font-semibold">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">{t.city}</p>
-                </CardContent>
-              </Card>
+            ].map((t, index) => (
+              <motion.div
+                key={t.name}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-50px' }}
+                transition={{ duration: 0.5, delay: index * 0.15, ease: 'easeOut' }}
+              >
+                <Card className="border border-border/50 hover:shadow-lg transition-shadow duration-300 h-full">
+                  <CardContent className="p-6">
+                    <Quote className="w-8 h-8 text-primary/20 mb-3" />
+                    <p className="text-sm text-muted-foreground mb-4 leading-relaxed italic">"{t.text}"</p>
+                    <div className="flex items-center gap-1 mb-2">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className={`w-3.5 h-3.5 ${i < t.rating ? 'text-primary fill-primary' : 'text-muted-foreground/30'}`} />
+                      ))}
+                    </div>
+                    <p className="text-sm font-semibold">{t.name}</p>
+                    <p className="text-xs text-muted-foreground">{t.city}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
