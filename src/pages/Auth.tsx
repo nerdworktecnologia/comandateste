@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,15 +11,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+const formatCpf = (value: string) => {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+};
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
 });
 
+const cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
+
 const signupSchema = z.object({
   fullName: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+  cpf: z.string().regex(cpfRegex, 'CPF inválido. Use o formato 000.000.000-00'),
   email: z.string().email('Email inválido'),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
   confirmPassword: z.string(),
@@ -79,7 +91,13 @@ export default function Auth() {
       return;
     }
 
+    // Save CPF to profile after signup (will be linked when email is confirmed)
+    // We store it via the auth metadata for now, and the trigger will handle profile creation
+    // We'll update the profile with CPF once the user confirms email and logs in
     toast.success('Conta criada! Verifique seu email para confirmar o cadastro.');
+    
+    // Store CPF in localStorage temporarily to save after first login
+    localStorage.setItem('pending_cpf', data.cpf);
   };
 
   const handleGoogleLogin = async () => {
@@ -216,6 +234,27 @@ export default function Auth() {
                   )}
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="signup-cpf">CPF</Label>
+                  <div className="relative">
+                    <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      id="signup-cpf"
+                      type="text"
+                      placeholder="000.000.000-00"
+                      className="pl-10"
+                      {...signupForm.register('cpf')}
+                      onChange={(e) => {
+                        const formatted = formatCpf(e.target.value);
+                        signupForm.setValue('cpf', formatted, { shouldValidate: true });
+                      }}
+                      maxLength={14}
+                    />
+                  </div>
+                  {signupForm.formState.errors.cpf && (
+                    <p className="text-sm text-destructive">{signupForm.formState.errors.cpf.message}</p>
+                  )}
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-email">Email</Label>
                   <div className="relative">

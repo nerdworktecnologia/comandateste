@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { lovable } from '@/integrations/lovable/index';
 import type { AppRole, Profile } from '@/types';
 
 interface AuthContextType {
@@ -38,6 +39,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (profileData) {
         setProfile(profileData as Profile);
+        
+        // Save pending CPF from signup if exists
+        const pendingCpf = localStorage.getItem('pending_cpf');
+        if (pendingCpf && !profileData.cpf) {
+          await supabase
+            .from('profiles')
+            .update({ cpf: pendingCpf })
+            .eq('user_id', userId);
+          localStorage.removeItem('pending_cpf');
+          setProfile({ ...profileData, cpf: pendingCpf } as Profile);
+        }
       }
 
       const { data: rolesData } = await supabase
@@ -113,14 +125,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/`
-      }
+    const result = await lovable.auth.signInWithOAuth('google', {
+      redirect_uri: `${window.location.origin}/`,
     });
     
-    return { error: error as Error | null };
+    return { error: result.error ? (result.error as Error) : null };
   };
 
   const signOut = async () => {
