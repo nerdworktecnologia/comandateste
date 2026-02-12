@@ -31,13 +31,13 @@ export function ProductCard({ product }: ProductCardProps) {
   const hasDiscount = product.discount_percent > 0 || (product.original_price && product.original_price > product.price);
   
   return (
-    <Card className="overflow-hidden group border-border">
+    <Card className="overflow-hidden group border-border/50 hover:shadow-lg hover:border-primary/20 hover:-translate-y-0.5 transition-all duration-300">
       <div className="relative aspect-square bg-muted">
         {product.image_url ? (
           <img 
             src={product.image_url} 
             alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-muted to-muted-foreground/10 flex items-center justify-center">
@@ -48,13 +48,13 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
           {hasDiscount && (
-            <Badge className="bg-primary text-primary-foreground">
+            <Badge className="bg-primary text-primary-foreground shadow-sm">
               -{product.discount_percent || Math.round((1 - product.price / (product.original_price || product.price)) * 100)}%
             </Badge>
           )}
           
           {nearExpiry && product.expiry_date && (
-            <Badge className="bg-secondary text-secondary-foreground flex items-center gap-1">
+            <Badge className="bg-secondary text-secondary-foreground flex items-center gap-1 shadow-sm">
               <Clock className="w-3 h-3" />
               {daysUntilExpiry(product.expiry_date)}d
             </Badge>
@@ -62,14 +62,14 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
         
         {product.requires_prescription && (
-          <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground">
+          <Badge className="absolute top-2 right-2 bg-destructive text-destructive-foreground shadow-sm">
             <AlertTriangle className="w-3 h-3 mr-1" />
             Receita
           </Badge>
         )}
         
         {!product.is_available && (
-          <div className="absolute inset-0 bg-foreground/50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-foreground/50 backdrop-blur-sm flex items-center justify-center">
             <Badge variant="secondary">Indisponível</Badge>
           </div>
         )}
@@ -93,7 +93,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 R$ {product.original_price.toFixed(2)}
               </span>
             )}
-            <span className="font-bold text-foreground">
+            <span className="font-bold text-foreground tabular-nums">
               R$ {product.price.toFixed(2)}
             </span>
           </div>
@@ -101,7 +101,7 @@ export function ProductCard({ product }: ProductCardProps) {
           {product.is_available && (
             <Button
               size="icon"
-              className="rounded-full w-8 h-8"
+              className="rounded-full w-8 h-8 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
               onClick={(e) => {
                 e.stopPropagation();
                 addItem(product);
