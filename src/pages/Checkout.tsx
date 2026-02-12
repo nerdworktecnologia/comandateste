@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, CheckCircle } from 'lucide-react';
+import { ArrowLeft, MapPin, CreditCard, Banknote, QrCode, CheckCircle, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -49,10 +49,52 @@ export default function Checkout() {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<AddressForm>({
     resolver: zodResolver(addressSchema),
   });
+
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepError, setCepError] = useState('');
+  const zipCodeValue = watch('zip_code');
+
+  const formatCep = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    if (digits.length > 5) return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+    return digits;
+  };
+
+  const fetchAddressByCep = useCallback(async (cep: string) => {
+    const digits = cep.replace(/\D/g, '');
+    if (digits.length !== 8) return;
+
+    setCepLoading(true);
+    setCepError('');
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data = await res.json();
+      if (data.erro) {
+        setCepError('CEP não encontrado');
+        return;
+      }
+      setValue('address', data.logradouro || '', { shouldValidate: true });
+      setValue('city', data.localidade || '', { shouldValidate: true });
+      setValue('state', data.uf || '', { shouldValidate: true });
+    } catch {
+      setCepError('Erro ao buscar CEP');
+    } finally {
+      setCepLoading(false);
+    }
+  }, [setValue]);
+
+  useEffect(() => {
+    const digits = (zipCodeValue || '').replace(/\D/g, '');
+    if (digits.length === 8) {
+      fetchAddressByCep(zipCodeValue || '');
+    }
+  }, [zipCodeValue, fetchAddressByCep]);
 
   useEffect(() => {
     if (!user) {
@@ -299,10 +341,28 @@ export default function Checkout() {
 
               <div>
                 <Label htmlFor="zip_code">CEP</Label>
-                <Input id="zip_code" placeholder="00000-000" {...register('zip_code')} />
+                <div className="relative">
+                  <Input
+                    id="zip_code"
+                    placeholder="00000-000"
+                    maxLength={9}
+                    {...register('zip_code', {
+                      onChange: (e) => {
+                        e.target.value = formatCep(e.target.value);
+                      },
+                    })}
+                  />
+                  {cepLoading && (
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
                 {errors.zip_code && (
                   <p className="text-sm text-destructive mt-1">{errors.zip_code.message}</p>
                 )}
+                {cepError && (
+                  <p className="text-sm text-destructive mt-1">{cepError}</p>
+                )
+                }
               </div>
 
               <div>
