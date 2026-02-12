@@ -32,6 +32,52 @@ export default function DriverDashboard() {
     if (!isDriver) { navigate('/'); toast.error('Acesso restrito a entregadores'); return; }
     fetchDriverData();
     fetchOrders();
+
+    // Real-time subscription for new available orders
+    const channel = supabase
+      .channel('driver-orders')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+        },
+        (payload) => {
+          const updated = payload.new as any;
+          // Notify when an order becomes ready for pickup
+          if (updated.status === 'ready' && !updated.driver_id) {
+            toast.info(`🚚 Novo pedido disponível: #${updated.order_number}`, {
+              duration: 8000,
+              action: {
+                label: 'Ver',
+                onClick: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+              },
+            });
+            // Play notification sound
+            try {
+              const audio = new Audio('/sounds/notification-chime.mp3');
+              audio.volume = 0.5;
+              audio.play().catch(() => {});
+            } catch {}
+          }
+          fetchOrders();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+        },
+        () => fetchOrders()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, isDriver]);
 
   const fetchDriverData = async () => {
