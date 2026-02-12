@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -47,7 +48,34 @@ const stats = [
   { value: '4.8', label: 'Avaliação média' },
 ];
 
+const businessFaqs = [
+  { q: 'Quanto custa para cadastrar minha empresa?', a: 'O cadastro é gratuito. Cobramos apenas uma pequena comissão sobre cada pedido realizado.' },
+  { q: 'Quanto tempo leva para ser aprovado?', a: 'A análise do cadastro leva em média 24 a 48 horas úteis. Você será notificado por e-mail assim que for aprovado.' },
+  { q: 'Posso vender qualquer tipo de produto?', a: 'Sim! Aceitamos supermercados, farmácias, pet shops, restaurantes, cosméticos e muito mais.' },
+  { q: 'Como funciona a entrega dos pedidos?', a: 'Você pode usar nossos entregadores parceiros ou realizar entregas próprias. A escolha é sua.' },
+  { q: 'Tenho acesso a relatórios de vendas?', a: 'Sim, o painel oferece dashboard completo com vendas, pedidos, avaliações e relatórios financeiros.' },
+  { q: 'Posso criar cupons de desconto?', a: 'Sim! Você pode criar cupons personalizados com desconto fixo ou percentual para atrair mais clientes.' },
+];
+
+const businessFaqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: businessFaqs.map((faq) => ({
+    '@type': 'Question',
+    name: faq.q,
+    acceptedAnswer: { '@type': 'Answer', text: faq.a },
+  })),
+};
+
 export default function EmpresasLanding() {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify(businessFaqJsonLd);
+    document.head.appendChild(script);
+    return () => { document.head.removeChild(script); };
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -258,14 +286,7 @@ export default function EmpresasLanding() {
               <p className="text-muted-foreground">Tire suas dúvidas sobre vender no Comanda.</p>
             </div>
             <Accordion type="single" collapsible className="space-y-3">
-              {[
-                { q: 'Quanto custa para cadastrar minha empresa?', a: 'O cadastro é gratuito. Cobramos apenas uma pequena comissão sobre cada pedido realizado.' },
-                { q: 'Quanto tempo leva para ser aprovado?', a: 'A análise do cadastro leva em média 24 a 48 horas úteis. Você será notificado por e-mail assim que for aprovado.' },
-                { q: 'Posso vender qualquer tipo de produto?', a: 'Sim! Aceitamos supermercados, farmácias, pet shops, restaurantes, cosméticos e muito mais.' },
-                { q: 'Como funciona a entrega dos pedidos?', a: 'Você pode usar nossos entregadores parceiros ou realizar entregas próprias. A escolha é sua.' },
-                { q: 'Tenho acesso a relatórios de vendas?', a: 'Sim, o painel oferece dashboard completo com vendas, pedidos, avaliações e relatórios financeiros.' },
-                { q: 'Posso criar cupons de desconto?', a: 'Sim! Você pode criar cupons personalizados com desconto fixo ou percentual para atrair mais clientes.' },
-              ].map((faq, index) => (
+              {businessFaqs.map((faq, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 20 }}

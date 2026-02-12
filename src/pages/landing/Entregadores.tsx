@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -47,7 +48,34 @@ const stats = [
   { value: '4.9', label: 'Avaliação média' },
 ];
 
+const driverFaqs = [
+  { q: 'Preciso ter um veículo próprio?', a: 'Sim, você pode usar moto, bicicleta ou carro. Basta informar o tipo de veículo no cadastro.' },
+  { q: 'Como recebo meus ganhos?', a: 'Os pagamentos são feitos semanalmente via transferência bancária direto na conta cadastrada.' },
+  { q: 'Existe taxa de cadastro?', a: 'Não! O cadastro é totalmente gratuito. Você só precisa preencher seus dados e aguardar a aprovação.' },
+  { q: 'Posso escolher os horários que trabalho?', a: 'Sim, você tem total flexibilidade. Trabalhe quando e onde quiser, sem horários fixos.' },
+  { q: 'Quanto tempo leva a aprovação?', a: 'A análise do cadastro leva em média 24 a 48 horas úteis. Você será notificado assim que for aprovado.' },
+  { q: 'Preciso ter experiência com entregas?', a: 'Não é necessário ter experiência prévia. O app é intuitivo e oferece suporte completo para novos entregadores.' },
+];
+
+const driverFaqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: driverFaqs.map((faq) => ({
+    '@type': 'Question',
+    name: faq.q,
+    acceptedAnswer: { '@type': 'Answer', text: faq.a },
+  })),
+};
+
 export default function EntregadoresLanding() {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.text = JSON.stringify(driverFaqJsonLd);
+    document.head.appendChild(script);
+    return () => { document.head.removeChild(script); };
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -257,14 +285,7 @@ export default function EntregadoresLanding() {
               <p className="text-muted-foreground">Tire suas dúvidas sobre ser entregador no Comanda.</p>
             </div>
             <Accordion type="single" collapsible className="space-y-3">
-              {[
-                { q: 'Preciso ter um veículo próprio?', a: 'Sim, você pode usar moto, bicicleta ou carro. Basta informar o tipo de veículo no cadastro.' },
-                { q: 'Como recebo meus ganhos?', a: 'Os pagamentos são feitos semanalmente via transferência bancária direto na conta cadastrada.' },
-                { q: 'Existe taxa de cadastro?', a: 'Não! O cadastro é totalmente gratuito. Você só precisa preencher seus dados e aguardar a aprovação.' },
-                { q: 'Posso escolher os horários que trabalho?', a: 'Sim, você tem total flexibilidade. Trabalhe quando e onde quiser, sem horários fixos.' },
-                { q: 'Quanto tempo leva a aprovação?', a: 'A análise do cadastro leva em média 24 a 48 horas úteis. Você será notificado assim que for aprovado.' },
-                { q: 'Preciso ter experiência com entregas?', a: 'Não é necessário ter experiência prévia. O app é intuitivo e oferece suporte completo para novos entregadores.' },
-              ].map((faq, index) => (
+              {driverFaqs.map((faq, index) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, y: 20 }}
