@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Store, Users, ClipboardList, TrendingUp, Clock, CheckCircle, XCircle, DollarSign, ShoppingBag, BarChart3 } from 'lucide-react';
+import { Store, Users, ClipboardList, TrendingUp, Clock, CheckCircle, XCircle, DollarSign, ShoppingBag, BarChart3, Download, Trophy, Medal } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,7 @@ export default function AdminDashboard() {
   });
   const [pendingStores, setPendingStores] = useState<StoreType[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [storeRanking, setStoreRanking] = useState<{ name: string; orders: number; revenue: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<Period>('30d');
 
@@ -53,15 +54,17 @@ export default function AdminDashboard() {
       { data: recentOrders },
       { data: todayData },
       { data: pending },
+      { data: allStores },
     ] = await Promise.all([
       supabase.from('stores').select('*', { count: 'exact', head: true }),
       supabase.from('stores').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase.from('stores').select('*', { count: 'exact', head: true }).eq('status', 'approved'),
       supabase.from('orders').select('*', { count: 'exact', head: true }),
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
-      supabase.from('orders').select('id, total, status, created_at').gte('created_at', threeMonthsAgo).order('created_at', { ascending: true }),
+      supabase.from('orders').select('id, total, status, created_at, store_id').gte('created_at', threeMonthsAgo).order('created_at', { ascending: true }),
       supabase.from('orders').select('total').gte('created_at', todayStart).neq('status', 'cancelled'),
       supabase.from('stores').select('*').eq('status', 'pending').order('created_at', { ascending: false }).limit(5),
+      supabase.from('stores').select('id, name').eq('status', 'approved'),
     ]);
 
     const todayRevenue = (todayData || []).reduce((sum, o) => sum + Number(o.total), 0);
@@ -80,6 +83,24 @@ export default function AdminDashboard() {
 
     setOrders(recentOrders || []);
     if (pending) setPendingStores(pending as StoreType[]);
+
+    // Build store ranking
+    const storeMap = new Map<string, { name: string; orders: number; revenue: number }>();
+    (allStores || []).forEach((s: any) => storeMap.set(s.id, { name: s.name, orders: 0, revenue: 0 }));
+    (recentOrders || []).forEach((o: any) => {
+      if (o.status === 'cancelled') return;
+      const entry = storeMap.get(o.store_id);
+      if (entry) {
+        entry.orders++;
+        entry.revenue += Number(o.total);
+      }
+    });
+    const ranking = Array.from(storeMap.values())
+      .filter(s => s.orders > 0)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 10);
+    setStoreRanking(ranking);
+
     setLoading(false);
   };
 
@@ -139,6 +160,39 @@ export default function AdminDashboard() {
     'hsl(142 76% 36%)', 'hsl(0 84% 60%)',
   ];
 
+  const downloadCSV = (filename: string, headers: string[], rows: (string | number)[][]) => {
+    const bom = '\uFEFF';
+    const csv = bom + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportOrdersCSV = () => {
+    const sLabels: Record<string, string> = {
+      pending: 'Pendente', confirmed: 'Confirmado', preparing: 'Preparando',
+      ready: 'Pronto', picked_up: 'Retirado', delivering: 'Em entrega',
+      delivered: 'Entregue', cancelled: 'Cancelado',
+    };
+    const headers = ['Data', 'Status', 'Total (R$)'];
+    const rows = filteredOrders.map(o => [
+      format(parseISO(o.created_at), 'dd/MM/yyyy HH:mm'),
+      sLabels[o.status] || o.status,
+      Number(o.total).toFixed(2).replace('.', ','),
+    ]);
+    downloadCSV(`pedidos_${period}.csv`, headers, rows);
+  };
+
+  const exportRankingCSV = () => {
+    const headers = ['Loja', 'Pedidos', 'Receita (R$)'];
+    const rows = storeRanking.map(s => [s.name, s.orders, s.revenue.toFixed(2).replace('.', ',')]);
+    downloadCSV(`ranking_lojas_${period}.csv`, headers, rows);
+  };
+
   const handleApproveStore = async (storeId: string) => {
     const { error } = await supabase
       .from('stores')
@@ -169,16 +223,24 @@ export default function AdminDashboard() {
             <h1 className="text-xl font-semibold">Dashboard</h1>
             <p className="text-sm text-muted-foreground">Visão geral da plataforma</p>
           </div>
-          <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
-            <SelectTrigger className="w-36">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Últimos 7 dias</SelectItem>
-              <SelectItem value="30d">Últimos 30 dias</SelectItem>
-              <SelectItem value="3m">Últimos 3 meses</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={exportOrdersCSV} title="Exportar pedidos">
+              <Download className="w-4 h-4 mr-1" /> Pedidos CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportRankingCSV} title="Exportar ranking">
+              <Download className="w-4 h-4 mr-1" /> Ranking CSV
+            </Button>
+            <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                <SelectItem value="3m">Últimos 3 meses</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </header>
 
         <div className="p-4 lg:p-6 space-y-6">
@@ -349,6 +411,62 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Store Ranking */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-primary" />
+                  Ranking de Lojas
+                </CardTitle>
+                <CardDescription>Top lojas por receita no período selecionado</CardDescription>
+              </div>
+              <Button variant="outline" size="sm" onClick={exportRankingCSV}>
+                <Download className="w-4 h-4 mr-1" /> CSV
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {storeRanking.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Store className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>Sem dados de lojas no período</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="text-left p-3 font-medium w-12">#</th>
+                        <th className="text-left p-3 font-medium">Loja</th>
+                        <th className="text-right p-3 font-medium">Pedidos</th>
+                        <th className="text-right p-3 font-medium">Receita</th>
+                        <th className="text-right p-3 font-medium">Ticket Médio</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {storeRanking.map((store, i) => (
+                        <tr key={store.name} className="border-b hover:bg-muted/30">
+                          <td className="p-3">
+                            {i === 0 ? <Medal className="w-5 h-5 text-yellow-500" /> :
+                             i === 1 ? <Medal className="w-5 h-5 text-muted-foreground" /> :
+                             i === 2 ? <Medal className="w-5 h-5 text-amber-700" /> :
+                             <span className="text-muted-foreground">{i + 1}</span>}
+                          </td>
+                          <td className="p-3 font-medium">{store.name}</td>
+                          <td className="p-3 text-right">{store.orders}</td>
+                          <td className="p-3 text-right font-semibold">R$ {store.revenue.toFixed(2)}</td>
+                          <td className="p-3 text-right text-muted-foreground">
+                            R$ {store.orders > 0 ? (store.revenue / store.orders).toFixed(2) : '0.00'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Pending Stores */}
           <Card>
