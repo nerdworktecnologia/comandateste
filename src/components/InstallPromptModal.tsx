@@ -25,10 +25,20 @@ export function InstallPromptModal() {
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     setIsIOS(isIOSDevice);
 
+    // Listen for successful install via browser
+    const onInstalled = () => {
+      localStorage.setItem('installPromptDismissed', 'true');
+      setOpen(false);
+      setIsStandalone(true);
+    };
+    window.addEventListener('appinstalled', onInstalled);
+
     if (isIOSDevice) {
-      // Show after a short delay for iOS
       const timer = setTimeout(() => setOpen(true), 2000);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('appinstalled', onInstalled);
+      };
     }
 
     const handler = (e: Event) => {
@@ -38,7 +48,10 @@ export function InstallPromptModal() {
     };
 
     window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
   }, []);
 
   const handleInstall = async () => {
