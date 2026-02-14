@@ -33,10 +33,18 @@ export function InstallPromptModal() {
     };
     window.addEventListener('appinstalled', onInstalled);
 
+    // In preview/iframe where beforeinstallprompt won't fire, show as generic prompt after delay
+    const fallbackTimer = setTimeout(() => {
+      if (!isIOSDevice) {
+        setOpen(true);
+      }
+    }, 3000);
+
     if (isIOSDevice) {
       const timer = setTimeout(() => setOpen(true), 2000);
       return () => {
         clearTimeout(timer);
+        clearTimeout(fallbackTimer);
         window.removeEventListener('appinstalled', onInstalled);
       };
     }
@@ -44,6 +52,7 @@ export function InstallPromptModal() {
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
+      clearTimeout(fallbackTimer);
       setTimeout(() => setOpen(true), 1500);
     };
 
@@ -51,6 +60,7 @@ export function InstallPromptModal() {
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
       window.removeEventListener('appinstalled', onInstalled);
+      clearTimeout(fallbackTimer);
     };
   }, []);
 
