@@ -1,4 +1,4 @@
-import { MapPin, Menu } from 'lucide-react';
+import { MapPin, Menu, Download } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -6,10 +6,12 @@ import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
+import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 
 export function Header() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
+  const { canInstall, isIOS, showNativePrompt, install } = useInstallPrompt();
 
   return (
     <header className="sticky top-0 z-40 bg-header border-b border-primary/20">
@@ -81,6 +83,30 @@ export function Header() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            {canInstall && (
+              showNativePrompt ? (
+                <Button
+                  onClick={install}
+                  size="sm"
+                  variant="outline"
+                  className="hidden sm:flex gap-1.5 border-header-text/30 text-header-text hover:bg-white/20 text-xs"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Instalar
+                </Button>
+              ) : isIOS ? (
+                <Link to="/install">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="hidden sm:flex gap-1.5 border-header-text/30 text-header-text hover:bg-white/20 text-xs"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Instalar
+                  </Button>
+                </Link>
+              ) : null
+            )}
             <CartDrawer />
 
             {user ? (
