@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { Layout } from "@/components/layout/Layout";
 import { SplashScreen } from "@/components/SplashScreen";
+import { PushNotificationManager } from "@/components/PushNotificationManager";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Checkout from "./pages/Checkout";
@@ -72,6 +73,7 @@ const App = () => {
         {showSplash && <SplashScreen onFinish={handleSplashFinish} duration={2500} />}
         <BrowserRouter>
           <AuthProvider>
+            <PushNotificationManager />
             <CartProvider>
               <Routes>
                 <Route path="/auth" element={<Auth />} />
