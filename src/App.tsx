@@ -9,6 +9,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { Layout } from "@/components/layout/Layout";
 import { SplashScreen } from "@/components/SplashScreen";
 import { PushNotificationManager } from "@/components/PushNotificationManager";
+import { InstallPromptModal } from "@/components/InstallPromptModal";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Checkout from "./pages/Checkout";
@@ -74,6 +75,7 @@ const App = () => {
         <BrowserRouter>
           <AuthProvider>
             <PushNotificationManager />
+            <InstallPromptModal />
             <CartProvider>
               <Routes>
                 <Route path="/auth" element={<Auth />} />
