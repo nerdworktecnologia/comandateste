@@ -15,6 +15,7 @@ import CustomerOrders from "./pages/Orders";
 import StorePage from "./pages/StorePage";
 import NotFound from "./pages/NotFound";
 import ForBusiness from "./pages/ForBusiness";
+import Install from "./pages/Install";
 import Profile from "./pages/Profile";
 import Search from "./pages/Search";
 
@@ -116,6 +117,9 @@ const App = () => {
                   <Route path="/" element={<Index />} />
                   <Route path="/loja/:slug" element={<StorePage />} />
                 </Route>
+                
+                {/* Install PWA */}
+                <Route path="/install" element={<Install />} />
                 
                 {/* Catch-all */}
                 <Route path="*" element={<NotFound />} />
