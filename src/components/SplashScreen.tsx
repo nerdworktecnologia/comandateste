@@ -5,7 +5,7 @@ interface SplashScreenProps {
   duration?: number;
 }
 
-export function SplashScreen({ onFinish, duration = 3500 }: SplashScreenProps) {
+export function SplashScreen({ onFinish, duration = 5000 }: SplashScreenProps) {
   const [phase, setPhase] = useState<'enter' | 'visible' | 'exit'>('enter');
 
   useEffect(() => {
@@ -40,15 +40,19 @@ export function SplashScreen({ onFinish, duration = 3500 }: SplashScreenProps) {
       </div>
 
       <div className="flex flex-col items-center gap-6 relative z-10">
-        {/* Logo */}
-        <div className={`transition-all duration-700 ease-out ${
+        {/* Logo with shimmer */}
+        <div className={`relative transition-all duration-700 ease-out ${
           phase !== 'enter' ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-75 translate-y-4'
         }`}>
           <img
             src="/logo.png"
             alt="Comanda"
-            className="h-28 w-auto drop-shadow-2xl"
+            className="h-28 w-auto drop-shadow-2xl relative z-10"
           />
+          {/* Shimmer overlay */}
+          <div className="absolute inset-0 z-20 overflow-hidden rounded-xl pointer-events-none">
+            <div className="splash-shimmer absolute inset-0" />
+          </div>
         </div>
 
         {/* App Name */}
@@ -83,6 +87,23 @@ export function SplashScreen({ onFinish, duration = 3500 }: SplashScreenProps) {
           0% { width: 0%; }
           60% { width: 70%; }
           100% { width: 100%; }
+        }
+        @keyframes shimmer {
+          0% { transform: translateX(-150%) skewX(-15deg); }
+          100% { transform: translateX(250%) skewX(-15deg); }
+        }
+        .splash-shimmer {
+          background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.35) 45%,
+            rgba(255, 255, 255, 0.5) 50%,
+            rgba(255, 255, 255, 0.35) 55%,
+            transparent 100%
+          );
+          width: 60%;
+          animation: shimmer 2s ease-in-out infinite;
+          animation-delay: 0.8s;
         }
       `}</style>
     </div>
