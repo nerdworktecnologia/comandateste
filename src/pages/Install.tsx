@@ -122,10 +122,9 @@ export default function Install() {
           </Card>
         )}
 
-        <div className="grid grid-cols-3 gap-3 text-center">
+        <div className="grid grid-cols-2 gap-3 text-center">
           {[
             { icon: '⚡', label: 'Rápido' },
-            { icon: '📱', label: 'Offline' },
             { icon: '🔔', label: 'Notificações' },
           ].map((item) => (
             <div key={item.label} className="p-3 rounded-xl bg-card border">

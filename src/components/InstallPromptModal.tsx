@@ -100,10 +100,9 @@ export function InstallPromptModal() {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-3 gap-3 py-4">
+        <div className="grid grid-cols-2 gap-3 py-4">
           {[
             { icon: '⚡', title: 'Ultra rápido', desc: 'Abre instantâneo' },
-            { icon: '📴', title: 'Funciona offline', desc: 'Sem internet' },
             { icon: '🔔', title: 'Notificações', desc: 'Fique por dentro' },
           ].map((item) => (
             <div key={item.title} className="flex flex-col items-center gap-1 p-3 rounded-xl bg-muted/50">
