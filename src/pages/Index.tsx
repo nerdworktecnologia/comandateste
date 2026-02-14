@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { HeroSlider } from '@/components/home/HeroSlider';
 import { CategoryTabs } from '@/components/home/CategoryTabs';
 import { StoreCard } from '@/components/home/StoreCard';
@@ -12,22 +11,19 @@ import { supabase } from '@/integrations/supabase/client';
 import type { CategoryType, Store, Product } from '@/types';
 
 const Index = () => {
-  const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState<CategoryType | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [stores, setStores] = useState<Store[]>([]);
-  const [featuredStores, setFeaturedStores] = useState<Store[]>([]);
-  const [topRatedStores, setTopRatedStores] = useState<Store[]>([]);
   const [nearExpiryProducts, setNearExpiryProducts] = useState<Product[]>([]);
   const [bestSellers, setBestSellers] = useState<Product[]>([]);
 
-  useEffect(() => {
-    fetchData();
-  }, [activeCategory]);
+  const featuredStores = useMemo(() => stores.filter(s => s.is_featured).slice(0, 6), [stores]);
+  const topRatedStores = useMemo(() => stores.filter(s => (s.rating || 0) >= 4.0).slice(0, 6), [stores]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
+      // Fetch categories first (needed for filtering)
       const { data: categoriesData } = await supabase
         .from('categories')
         .select('id, category_type')
@@ -38,156 +34,95 @@ const Index = () => {
         categoryMap.set(cat.id, cat.category_type);
       });
 
-      let storesQuery = supabase
-        .from('stores')
-        .select('*')
-        .eq('status', 'approved')
-        .order('rating', { ascending: false });
+      // Build category filter
+      const categoryIds = activeCategory !== 'all'
+        ? Array.from(categoryMap.entries()).filter(([_, type]) => type === activeCategory).map(([id]) => id)
+        : null;
 
-      if (activeCategory !== 'all') {
-        const categoryIds = Array.from(categoryMap.entries())
-          .filter(([_, type]) => type === activeCategory)
-          .map(([id]) => id);
-        if (categoryIds.length > 0) {
-          storesQuery = storesQuery.in('category_id', categoryIds);
-        }
-      }
+      // Run all three queries in parallel
+      let storesQuery = supabase.from('stores').select('*').eq('status', 'approved').order('rating', { ascending: false });
+      if (categoryIds?.length) storesQuery = storesQuery.in('category_id', categoryIds);
 
-      const { data: storesData } = await storesQuery;
-      const allStores = (storesData || []) as Store[];
-      setStores(allStores);
-      setFeaturedStores(allStores.filter(s => s.is_featured).slice(0, 6));
-      setTopRatedStores(allStores.filter(s => (s.rating || 0) >= 4.0).slice(0, 6));
+      const today = new Date().toISOString().split('T')[0];
+      const sevenDays = new Date();
+      sevenDays.setDate(sevenDays.getDate() + 7);
+      let expiryQuery = supabase.from('products').select('*').eq('is_available', true).not('expiry_date', 'is', null).lte('expiry_date', sevenDays.toISOString().split('T')[0]).gte('expiry_date', today).order('expiry_date', { ascending: true }).limit(8);
+      if (categoryIds?.length) expiryQuery = expiryQuery.in('category_id', categoryIds);
 
-      const sevenDaysFromNow = new Date();
-      sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+      let bestQuery = supabase.from('products').select('*').eq('is_available', true).order('sales_count', { ascending: false }).limit(8);
+      if (categoryIds?.length) bestQuery = bestQuery.in('category_id', categoryIds);
 
-      let expiryQuery = supabase
-        .from('products')
-        .select('*')
-        .eq('is_available', true)
-        .not('expiry_date', 'is', null)
-        .lte('expiry_date', sevenDaysFromNow.toISOString().split('T')[0])
-        .gte('expiry_date', new Date().toISOString().split('T')[0])
-        .order('expiry_date', { ascending: true })
-        .limit(8);
+      const [storesRes, expiryRes, bestRes] = await Promise.all([storesQuery, expiryQuery, bestQuery]);
 
-      if (activeCategory !== 'all') {
-        const categoryIds = Array.from(categoryMap.entries())
-          .filter(([_, type]) => type === activeCategory)
-          .map(([id]) => id);
-        if (categoryIds.length > 0) {
-          expiryQuery = expiryQuery.in('category_id', categoryIds);
-        }
-      }
-
-      const { data: expiryProducts } = await expiryQuery;
-      setNearExpiryProducts((expiryProducts || []) as Product[]);
-
-      let bestSellersQuery = supabase
-        .from('products')
-        .select('*')
-        .eq('is_available', true)
-        .order('sales_count', { ascending: false })
-        .limit(8);
-
-      if (activeCategory !== 'all') {
-        const categoryIds = Array.from(categoryMap.entries())
-          .filter(([_, type]) => type === activeCategory)
-          .map(([id]) => id);
-        if (categoryIds.length > 0) {
-          bestSellersQuery = bestSellersQuery.in('category_id', categoryIds);
-        }
-      }
-
-      const { data: bestSellersData } = await bestSellersQuery;
-      setBestSellers((bestSellersData || []) as Product[]);
+      setStores((storesRes.data || []) as Store[]);
+      setNearExpiryProducts((expiryRes.data || []) as Product[]);
+      setBestSellers((bestRes.data || []) as Product[]);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeCategory]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   return (
     <div className="space-y-0 pb-20 md:pb-0">
-      {/* Hero Slider */}
       <div className="container mx-auto px-4 pt-4">
         <HeroSlider />
       </div>
 
-      {/* Category Tabs */}
       <div className="container mx-auto px-4 py-4">
-        <CategoryTabs 
-          activeCategory={activeCategory} 
-          onCategoryChange={setActiveCategory} 
-        />
+        <CategoryTabs activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
       </div>
 
-      {/* ═══════ PART 1: PRODUCTS ═══════ */}
+      {/* Products */}
       <div className="bg-background">
-        {/* Near Expiry Products */}
         {(loading || nearExpiryProducts.length > 0) && (
           <section className="container mx-auto px-4 py-6 animate-fade-in">
             <SectionHeader icon={Clock} iconColor="text-accent" title="Próximo da Validade" subtitle="Descontos especiais" />
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
-              {loading ? <ProductSkeletons /> : nearExpiryProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+              {loading ? <ProductSkeletons /> : nearExpiryProducts.map((p) => <ProductCard key={p.id} product={p} />)}
             </div>
           </section>
         )}
 
-        {/* Best Sellers */}
         {(loading || bestSellers.length > 0) && (
           <section className="container mx-auto px-4 py-6 animate-fade-in" style={{ animationDelay: '0.1s', opacity: 0 }}>
             <SectionHeader icon={Flame} iconColor="text-primary" title="Mais Vendidos" subtitle="Os favoritos dos clientes" />
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
-              {loading ? <ProductSkeletons /> : bestSellers.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+              {loading ? <ProductSkeletons /> : bestSellers.map((p) => <ProductCard key={p.id} product={p} />)}
             </div>
           </section>
         )}
       </div>
 
-      {/* Divider */}
       <div className="h-2 bg-muted/50" />
 
-      {/* ═══════ PART 2: STORES ═══════ */}
+      {/* Stores */}
       <div className="bg-background">
-        {/* Featured Stores */}
         {(loading || featuredStores.length > 0) && (
           <section className="container mx-auto px-4 py-6 animate-fade-in" style={{ animationDelay: '0.15s', opacity: 0 }}>
             <SectionHeader icon={Star} iconColor="text-primary" title="Lojas em Destaque" />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {loading ? <StoreSkeletons /> : featuredStores.map((store) => (
-                <StoreCard key={store.id} store={store} />
-              ))}
+              {loading ? <StoreSkeletons /> : featuredStores.map((s) => <StoreCard key={s.id} store={s} />)}
             </div>
           </section>
         )}
 
-        {/* Top Rated */}
         {(loading || topRatedStores.length > 0) && (
           <section className="container mx-auto px-4 py-6 animate-fade-in" style={{ animationDelay: '0.2s', opacity: 0 }}>
             <SectionHeader icon={TrendingUp} iconColor="text-accent" title="Mais Bem Avaliadas" />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {loading ? <StoreSkeletons /> : topRatedStores.map((store) => (
-                <StoreCard key={store.id} store={store} />
-              ))}
+              {loading ? <StoreSkeletons /> : topRatedStores.map((s) => <StoreCard key={s.id} store={s} />)}
             </div>
           </section>
         )}
 
-        {/* All Stores */}
         <section className="container mx-auto px-4 py-6 animate-fade-in" style={{ animationDelay: '0.25s', opacity: 0 }}>
           <SectionHeader icon={StoreIcon} iconColor="text-muted-foreground" title="Todas as Lojas" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {loading ? <StoreSkeletons /> : stores.map((store) => (
-              <StoreCard key={store.id} store={store} />
-            ))}
-            {!loading && stores.length === 0 && (
+            {loading ? <StoreSkeletons /> : stores.length > 0 ? stores.map((s) => <StoreCard key={s.id} store={s} />) : (
               <div className="col-span-full text-center py-12 text-muted-foreground">
                 <StoreIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
                 <p>Nenhuma loja disponível no momento</p>
@@ -197,10 +132,8 @@ const Index = () => {
         </section>
       </div>
 
-      {/* Divider */}
       <div className="h-2 bg-muted/50" />
 
-      {/* ═══════ PART 3: FOR BUSINESS ═══════ */}
       <div className="container mx-auto px-4 py-8">
         <BusinessBanner />
       </div>
@@ -208,13 +141,11 @@ const Index = () => {
   );
 };
 
-/* ── Sub-components ── */
-
 function SectionHeader({ icon: Icon, iconColor, title, subtitle }: { icon: React.ElementType; iconColor: string; title: string; subtitle?: string }) {
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2.5">
-        <div className={`w-8 h-8 rounded-lg bg-muted flex items-center justify-center`}>
+        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
           <Icon className={`w-4.5 h-4.5 ${iconColor}`} />
         </div>
         <div>
