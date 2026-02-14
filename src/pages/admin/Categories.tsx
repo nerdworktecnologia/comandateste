@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Database } from '@/integrations/supabase/types';
 import { Plus, Pencil, Trash2, GripVertical, Search } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,24 @@ import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
 
 const categoryTypeLabels: Record<string, string> = {
   supermarket: 'Supermercado',
@@ -35,6 +53,54 @@ const defaultForm = {
   sort_order: 0,
 };
 
+interface SortableRowProps {
+  cat: any;
+  onEdit: (cat: any) => void;
+  onDelete: (id: string) => void;
+  onToggle: (id: string, active: boolean) => void;
+  isDragging?: boolean;
+}
+
+function SortableRow({ cat, onEdit, onDelete, onToggle }: SortableRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: cat.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <tr ref={setNodeRef} style={style} className="border-b hover:bg-muted/30">
+      <td className="p-3">
+        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-muted">
+          <GripVertical className="w-4 h-4 text-muted-foreground" />
+        </button>
+      </td>
+      <td className="p-3 text-muted-foreground text-xs">{cat.sort_order}</td>
+      <td className="p-3 text-lg">{cat.icon || '📁'}</td>
+      <td className="p-3 font-medium">{cat.name}</td>
+      <td className="p-3">
+        <Badge variant="secondary">{categoryTypeLabels[cat.category_type] || cat.category_type}</Badge>
+      </td>
+      <td className="p-3 font-mono text-xs text-muted-foreground hidden sm:table-cell">{cat.slug}</td>
+      <td className="p-3">
+        <Switch checked={cat.is_active} onCheckedChange={() => onToggle(cat.id, cat.is_active)} />
+      </td>
+      <td className="p-3">
+        <div className="flex gap-1">
+          <Button size="sm" variant="ghost" onClick={() => onEdit(cat)}>
+            <Pencil className="w-4 h-4" />
+          </Button>
+          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => onDelete(cat.id)}>
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 export default function AdminCategories() {
   const navigate = useNavigate();
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -45,6 +111,11 @@ export default function AdminCategories() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(defaultForm);
   const [saving, setSaving] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   useEffect(() => {
     if (authLoading) return;
@@ -62,9 +133,31 @@ export default function AdminCategories() {
     setLoading(false);
   };
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = categories.findIndex(c => c.id === active.id);
+    const newIndex = categories.findIndex(c => c.id === over.id);
+    const reordered = arrayMove(categories, oldIndex, newIndex);
+
+    // Optimistic update
+    setCategories(reordered);
+
+    // Persist new sort_order values
+    const updates = reordered.map((cat, i) => 
+      supabase.from('categories').update({ sort_order: i }).eq('id', cat.id)
+    );
+    await Promise.all(updates);
+    
+    // Refresh to get accurate data
+    fetchCategories();
+    toast({ title: 'Ordem atualizada!' });
+  };
+
   const openNew = () => {
     setEditingId(null);
-    setForm(defaultForm);
+    setForm({ ...defaultForm, sort_order: categories.length });
     setDialogOpen(true);
   };
 
@@ -90,27 +183,19 @@ export default function AdminCategories() {
       toast({ title: 'Nome obrigatório', variant: 'destructive' });
       return;
     }
-
     setSaving(true);
     const slug = form.slug.trim() || generateSlug(form.name);
     const payload = { ...form, slug };
 
     if (editingId) {
       const { error } = await supabase.from('categories').update(payload).eq('id', editingId);
-      if (error) {
-        toast({ title: 'Erro ao atualizar', description: error.message, variant: 'destructive' });
-      } else {
-        toast({ title: 'Categoria atualizada!' });
-      }
+      if (error) toast({ title: 'Erro ao atualizar', description: error.message, variant: 'destructive' });
+      else toast({ title: 'Categoria atualizada!' });
     } else {
       const { error } = await supabase.from('categories').insert(payload);
-      if (error) {
-        toast({ title: 'Erro ao criar', description: error.message, variant: 'destructive' });
-      } else {
-        toast({ title: 'Categoria criada!' });
-      }
+      if (error) toast({ title: 'Erro ao criar', description: error.message, variant: 'destructive' });
+      else toast({ title: 'Categoria criada!' });
     }
-
     setSaving(false);
     setDialogOpen(false);
     fetchCategories();
@@ -124,18 +209,16 @@ export default function AdminCategories() {
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta categoria?')) return;
     const { error } = await supabase.from('categories').delete().eq('id', id);
-    if (error) {
-      toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Categoria excluída' });
-      fetchCategories();
-    }
+    if (error) toast({ title: 'Erro ao excluir', description: error.message, variant: 'destructive' });
+    else { toast({ title: 'Categoria excluída' }); fetchCategories(); }
   };
 
+  const isSearching = searchTerm.trim().length > 0;
   const filtered = categories.filter(c =>
     c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (categoryTypeLabels[c.category_type] || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
+  const displayList = isSearching ? filtered : categories;
 
   if (authLoading || loading) {
     return (
@@ -152,7 +235,7 @@ export default function AdminCategories() {
         <header className="sticky top-0 z-40 bg-card border-b border-border px-4 lg:px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold">Categorias</h1>
-            <p className="text-sm text-muted-foreground">Gerenciar categorias da plataforma</p>
+            <p className="text-sm text-muted-foreground">Arraste para reordenar • Gerenciar categorias</p>
           </div>
           <Button onClick={openNew}>
             <Plus className="w-4 h-4 mr-2" /> Nova Categoria
@@ -176,58 +259,44 @@ export default function AdminCategories() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="text-left p-3 font-medium">Ordem</th>
+                      <th className="p-3 w-10"></th>
+                      <th className="text-left p-3 font-medium w-16">#</th>
                       <th className="text-left p-3 font-medium">Ícone</th>
                       <th className="text-left p-3 font-medium">Nome</th>
                       <th className="text-left p-3 font-medium">Tipo</th>
-                      <th className="text-left p-3 font-medium">Slug</th>
+                      <th className="text-left p-3 font-medium hidden sm:table-cell">Slug</th>
                       <th className="text-left p-3 font-medium">Ativa</th>
                       <th className="text-left p-3 font-medium">Ações</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {filtered.map(cat => (
-                      <tr key={cat.id} className="border-b hover:bg-muted/30">
-                        <td className="p-3 text-muted-foreground">{cat.sort_order}</td>
-                        <td className="p-3 text-lg">{cat.icon || '📁'}</td>
-                        <td className="p-3 font-medium">{cat.name}</td>
-                        <td className="p-3">
-                          <Badge variant="secondary">{categoryTypeLabels[cat.category_type] || cat.category_type}</Badge>
-                        </td>
-                        <td className="p-3 font-mono text-xs text-muted-foreground">{cat.slug}</td>
-                        <td className="p-3">
-                          <Switch
-                            checked={cat.is_active}
-                            onCheckedChange={() => handleToggleActive(cat.id, cat.is_active)}
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={displayList.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                      <tbody>
+                        {displayList.map(cat => (
+                          <SortableRow
+                            key={cat.id}
+                            cat={cat}
+                            onEdit={openEdit}
+                            onDelete={handleDelete}
+                            onToggle={handleToggleActive}
                           />
-                        </td>
-                        <td className="p-3">
-                          <div className="flex gap-1">
-                            <Button size="sm" variant="ghost" onClick={() => openEdit(cat)}>
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleDelete(cat.id)}>
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {filtered.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                          Nenhuma categoria encontrada
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
+                        ))}
+                        {displayList.length === 0 && (
+                          <tr>
+                            <td colSpan={8} className="p-8 text-center text-muted-foreground">
+                              Nenhuma categoria encontrada
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </SortableContext>
+                  </DndContext>
                 </table>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Dialog criar/editar */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -239,9 +308,7 @@ export default function AdminCategories() {
                   <Label>Nome *</Label>
                   <Input
                     value={form.name}
-                    onChange={(e) => {
-                      setForm({ ...form, name: e.target.value, slug: generateSlug(e.target.value) });
-                    }}
+                    onChange={(e) => setForm({ ...form, name: e.target.value, slug: generateSlug(e.target.value) })}
                     placeholder="Ex: Supermercados"
                   />
                 </div>
@@ -259,9 +326,7 @@ export default function AdminCategories() {
                 <div className="space-y-2">
                   <Label>Tipo</Label>
                   <Select value={form.category_type} onValueChange={(v) => setForm({ ...form, category_type: v as Database['public']['Enums']['category_type'] })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {Object.entries(categoryTypeLabels).map(([key, label]) => (
                         <SelectItem key={key} value={key}>{label}</SelectItem>
@@ -271,37 +336,22 @@ export default function AdminCategories() {
                 </div>
                 <div className="space-y-2">
                   <Label>Ícone (emoji)</Label>
-                  <Input
-                    value={form.icon}
-                    onChange={(e) => setForm({ ...form, icon: e.target.value })}
-                    placeholder="🛒"
-                  />
+                  <Input value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} placeholder="🛒" />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label>Descrição</Label>
-                <Input
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  placeholder="Descrição opcional"
-                />
+                <Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Descrição opcional" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Ordem</Label>
-                  <Input
-                    type="number"
-                    value={form.sort_order}
-                    onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })}
-                  />
+                  <Input type="number" value={form.sort_order} onChange={(e) => setForm({ ...form, sort_order: Number(e.target.value) })} />
                 </div>
                 <div className="flex items-center gap-3 pt-6">
-                  <Switch
-                    checked={form.is_active}
-                    onCheckedChange={(v) => setForm({ ...form, is_active: v })}
-                  />
+                  <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
                   <Label>Ativa</Label>
                 </div>
               </div>
