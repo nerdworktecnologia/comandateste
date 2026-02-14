@@ -109,7 +109,7 @@ export default function Auth() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <Link to="/" className="inline-flex justify-center mb-4">
-            <Logo size="lg" />
+            <Logo size="lg" showText={false} />
           </Link>
           <CardTitle>Bem-vindo ao Comanda</CardTitle>
           <CardDescription>
