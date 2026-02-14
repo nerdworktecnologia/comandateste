@@ -1,4 +1,4 @@
-import { Truck, DollarSign, Smartphone, Clock, MapPin, Shield } from 'lucide-react';
+import { Bike, DollarSign, Smartphone, Clock, MapPin, Shield, Car } from 'lucide-react';
 import { LandingHeader } from '@/components/landing/LandingHeader';
 import { LandingHero } from '@/components/landing/LandingHero';
 import { LandingBenefits } from '@/components/landing/LandingBenefits';
@@ -48,10 +48,10 @@ const stats = [
 export default function EntregadoresLanding() {
   return (
     <div className="min-h-screen bg-background">
-      <LandingHeader registerLink="/driver/register" registerLabel="Cadastrar" registerIcon={Truck} />
+      <LandingHeader registerLink="/driver/register" registerLabel="Cadastrar" registerIcon={Bike} />
       <LandingHero
         badge="Para Entregadores"
-        badgeIcon={Truck}
+        badgeIcon={Bike}
         title={<>Entregue e ganhe com o <span className="text-primary">Comanda</span></>}
         subtitle="Cadastre-se como entregador e comece a ganhar dinheiro fazendo entregas no seu tempo. Flexibilidade total e ganhos competitivos."
         primaryCta={{ label: 'Quero ser entregador', link: '/driver/register' }}
