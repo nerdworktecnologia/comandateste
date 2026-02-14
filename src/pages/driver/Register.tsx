@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Truck, ArrowLeft, MapPin, Phone, Mail, User, Car, Loader2, CheckCircle } from 'lucide-react';
+import { Bike, ArrowLeft, MapPin, Phone, Mail, User, Car, Loader2, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -129,7 +129,7 @@ export default function DriverRegister() {
       <section className="bg-secondary text-secondary-foreground py-12 px-4">
         <div className="container mx-auto max-w-4xl text-center">
           <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-6">
-            <Truck className="w-10 h-10 text-primary-foreground" />
+            <Bike className="w-10 h-10 text-primary-foreground" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold mb-4">
             Seja um Entregador Comanda
@@ -301,7 +301,7 @@ export default function DriverRegister() {
                     </>
                   ) : (
                     <>
-                      <Truck className="w-4 h-4 mr-2" />
+                      <Bike className="w-4 h-4 mr-2" />
                       Quero ser entregador
                     </>
                   )}
