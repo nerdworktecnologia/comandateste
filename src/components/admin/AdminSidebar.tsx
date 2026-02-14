@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Store, Users, ClipboardList, 
-  Settings, LogOut, ShieldCheck, Bell
+  Settings, LogOut, ShieldCheck, Bell, Tag
 } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/admin/stores', icon: Store, label: 'Empresas' },
   { to: '/admin/orders', icon: ClipboardList, label: 'Pedidos' },
+  { to: '/admin/categories', icon: Tag, label: 'Categorias' },
   { to: '/admin/users', icon: Users, label: 'Usuários' },
   { to: '/admin/push', icon: Bell, label: 'Push Notifications' },
   { to: '/admin/settings', icon: Settings, label: 'Configurações' },

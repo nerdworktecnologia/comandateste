@@ -50,6 +50,7 @@ import AdminUsers from "./pages/admin/Users";
 import AdminOrders from "./pages/admin/Orders";
 import AdminPushNotifications from "./pages/admin/PushNotifications";
 import AdminSettings from "./pages/admin/Settings";
+import AdminCategories from "./pages/admin/Categories";
 
 const queryClient = new QueryClient();
 
@@ -120,6 +121,7 @@ const App = () => {
                 <Route path="/admin/orders" element={<AdminOrders />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
                 <Route path="/admin/push" element={<AdminPushNotifications />} />
+                <Route path="/admin/categories" element={<AdminCategories />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
                 
                 {/* Public routes with Layout */}
