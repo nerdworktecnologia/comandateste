@@ -47,6 +47,9 @@ import DriverEarnings from "./pages/driver/Earnings";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminStores from "./pages/admin/Stores";
 import AdminUsers from "./pages/admin/Users";
+import AdminOrders from "./pages/admin/Orders";
+import AdminPushNotifications from "./pages/admin/PushNotifications";
+import AdminSettings from "./pages/admin/Settings";
 
 const queryClient = new QueryClient();
 
@@ -114,7 +117,10 @@ const App = () => {
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/stores" element={<AdminStores />} />
+                <Route path="/admin/orders" element={<AdminOrders />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
+                <Route path="/admin/push" element={<AdminPushNotifications />} />
+                <Route path="/admin/settings" element={<AdminSettings />} />
                 
                 {/* Public routes with Layout */}
                 <Route element={<Layout />}>
