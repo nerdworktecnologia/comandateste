@@ -35,11 +35,8 @@ export default function AdminDashboard() {
   const [period, setPeriod] = useState<Period>('30d');
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) { navigate('/auth'); return; }
-    if (!isAdmin) { navigate('/'); return; }
     fetchDashboardData();
-  }, [user, isAdmin, authLoading, navigate]);
+  }, []);
 
   const fetchDashboardData = async () => {
     const threeMonthsAgo = subMonths(new Date(), 3).toISOString();

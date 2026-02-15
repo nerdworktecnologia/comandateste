@@ -54,20 +54,8 @@ export default function AdminUsers() {
   const [roleToAdd, setRoleToAdd] = useState<AppRole | ''>('');
 
   useEffect(() => {
-    if (authLoading) return;
-    
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-
-    if (!isAdmin) {
-      navigate('/');
-      return;
-    }
-
     fetchUsers();
-  }, [user, isAdmin, authLoading, navigate]);
+  }, []);
 
   const fetchUsers = async () => {
     setLoading(true);

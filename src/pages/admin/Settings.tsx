@@ -19,11 +19,8 @@ export default function AdminSettings() {
   });
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) { navigate('/auth'); return; }
-    if (!isAdmin) { navigate('/'); return; }
     fetchPlatformStats();
-  }, [user, isAdmin, authLoading, navigate]);
+  }, []);
 
   const fetchPlatformStats = async () => {
     const [stores, products, orders, users, pushSubs] = await Promise.all([
