@@ -43,11 +43,8 @@ export default function AdminOrders() {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) { navigate('/auth'); return; }
-    if (!isAdmin) { navigate('/'); return; }
     fetchOrders();
-  }, [user, isAdmin, authLoading, navigate]);
+  }, []);
 
   const fetchOrders = async () => {
     const { data } = await supabase

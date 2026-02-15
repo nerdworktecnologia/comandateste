@@ -118,11 +118,8 @@ export default function AdminCategories() {
   );
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) { navigate('/auth'); return; }
-    if (!isAdmin) { navigate('/'); return; }
     fetchCategories();
-  }, [user, isAdmin, authLoading, navigate]);
+  }, []);
 
   const fetchCategories = async () => {
     const { data } = await supabase

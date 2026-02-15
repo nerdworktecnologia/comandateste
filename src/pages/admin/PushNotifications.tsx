@@ -22,11 +22,8 @@ export default function AdminPushNotifications() {
   const [history, setHistory] = useState<any[]>([]);
 
   useEffect(() => {
-    if (authLoading) return;
-    if (!user) { navigate('/auth'); return; }
-    if (!isAdmin) { navigate('/'); return; }
     fetchStats();
-  }, [user, isAdmin, authLoading, navigate]);
+  }, []);
 
   const fetchStats = async () => {
     const { count: totalSubs } = await (supabase as any)

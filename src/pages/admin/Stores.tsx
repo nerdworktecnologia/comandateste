@@ -31,15 +31,8 @@ export default function AdminStores() {
   const [selectedStore, setSelectedStore] = useState<StoreType | null>(null);
 
   useEffect(() => {
-    if (authLoading) return;
-    
-    if (!user || !isAdmin) {
-      navigate('/');
-      return;
-    }
-
     fetchStores();
-  }, [user, isAdmin, authLoading, navigate]);
+  }, []);
 
   const fetchStores = async () => {
     const { data, error } = await supabase
