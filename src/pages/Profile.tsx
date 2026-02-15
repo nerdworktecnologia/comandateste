@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, MapPin, Save, LogOut, ChevronLeft, Camera, CreditCard, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Save, LogOut, ChevronLeft, Camera, CreditCard, Loader2, Trash2 } from 'lucide-react';
 import { formatCpf, validateCpf } from '@/lib/cpf';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -197,6 +197,30 @@ const Profile = () => {
     }
   };
 
+  const handleRemoveAvatar = async () => {
+    if (!user || !profile?.avatar_url) return;
+    setUploadingAvatar(true);
+    try {
+      // List and remove files in user folder
+      const { data: files } = await supabase.storage.from('avatars').list(user.id);
+      if (files?.length) {
+        await supabase.storage.from('avatars').remove(files.map(f => `${user.id}/${f.name}`));
+      }
+
+      await supabase.from('profiles')
+        .update({ avatar_url: null, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+
+      toast({ title: 'Foto removida!' });
+      window.location.reload();
+    } catch (error) {
+      console.error('Remove avatar error:', error);
+      toast({ title: 'Erro ao remover foto', variant: 'destructive' });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -264,6 +288,18 @@ const Profile = () => {
               <div className="text-center">
                 <h2 className="text-xl font-semibold">{formData.full_name || 'Usuário'}</h2>
                 <p className="text-sm text-muted-foreground">{user.email}</p>
+                {profile?.avatar_url && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 text-destructive hover:text-destructive"
+                    onClick={handleRemoveAvatar}
+                    disabled={uploadingAvatar}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                    Remover foto
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>
