@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Save, LogOut, ChevronLeft, Camera, CreditCard, Loader2 } from 'lucide-react';
 import { formatCpf, validateCpf } from '@/lib/cpf';
@@ -31,6 +31,8 @@ const Profile = () => {
   const { toast } = useToast();
   const { user, profile, signOut, loading: authLoading } = useAuth();
   
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
@@ -154,6 +156,47 @@ const Profile = () => {
     }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: 'Arquivo muito grande', description: 'Máximo 2MB.', variant: 'destructive' });
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const filePath = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      const avatarUrl = `${publicUrl}?t=${Date.now()}`;
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
+        .eq('user_id', user.id);
+      if (updateError) throw updateError;
+
+      toast({ title: 'Foto atualizada!' });
+      window.location.reload();
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      toast({ title: 'Erro ao enviar foto', variant: 'destructive' });
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -202,11 +245,20 @@ const Profile = () => {
                     {formData.full_name?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                />
                 <Button 
                   size="icon" 
                   className="absolute bottom-0 right-0 rounded-full w-8 h-8"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingAvatar}
                 >
-                  <Camera className="w-4 h-4" />
+                  {uploadingAvatar ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
                 </Button>
               </div>
               <div className="text-center">
