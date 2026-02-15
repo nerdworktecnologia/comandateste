@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Users, Search, Filter, Eye, Shield, ShieldCheck, 
-  Store, Truck, User as UserIcon, MoreHorizontal
+  Store, Truck, User as UserIcon, MoreHorizontal, Plus, Pencil, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,6 +13,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { CreateUserDialog } from '@/components/admin/CreateUserDialog';
+import { EditUserDialog } from '@/components/admin/EditUserDialog';
+import { DeleteUserDialog } from '@/components/admin/DeleteUserDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -52,6 +55,11 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
   const [isAddingRole, setIsAddingRole] = useState(false);
   const [roleToAdd, setRoleToAdd] = useState<AppRole | ''>('');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserWithRoles | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deletingUser, setDeletingUser] = useState<UserWithRoles | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -206,9 +214,15 @@ export default function AdminUsers() {
                 Gerencie os usuários da plataforma
               </p>
             </div>
-            <Badge variant="outline" className="hidden sm:flex">
-              {users.length} usuários
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="hidden sm:flex">
+                {users.length} usuários
+              </Badge>
+              <Button onClick={() => setIsCreateOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Novo Usuário
+              </Button>
+            </div>
           </div>
         </header>
 
@@ -334,9 +348,9 @@ export default function AdminUsers() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => setSelectedUser(userItem)}>
-                                <Eye className="w-4 h-4 mr-2" />
-                                Ver detalhes
+                              <DropdownMenuItem onClick={() => { setEditingUser(userItem); setIsEditOpen(true); }}>
+                                <Pencil className="w-4 h-4 mr-2" />
+                                Editar
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 
@@ -347,6 +361,15 @@ export default function AdminUsers() {
                               >
                                 <Shield className="w-4 h-4 mr-2" />
                                 Gerenciar papéis
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-destructive"
+                                onClick={() => { setDeletingUser(userItem); setIsDeleteOpen(true); }}
+                                disabled={userItem.user_id === user?.id}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Excluir
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -504,6 +527,30 @@ export default function AdminUsers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Create User Dialog */}
+      <CreateUserDialog 
+        open={isCreateOpen} 
+        onOpenChange={setIsCreateOpen} 
+        onCreated={fetchUsers} 
+      />
+
+      {/* Edit User Dialog */}
+      <EditUserDialog 
+        user={editingUser} 
+        open={isEditOpen} 
+        onOpenChange={(open) => { setIsEditOpen(open); if (!open) setEditingUser(null); }} 
+        onUpdated={fetchUsers} 
+      />
+
+      {/* Delete User Dialog */}
+      <DeleteUserDialog 
+        userId={deletingUser?.user_id || null}
+        userName={deletingUser?.full_name || null}
+        open={isDeleteOpen} 
+        onOpenChange={(open) => { setIsDeleteOpen(open); if (!open) setDeletingUser(null); }} 
+        onDeleted={fetchUsers} 
+      />
     </div>
   );
 }
