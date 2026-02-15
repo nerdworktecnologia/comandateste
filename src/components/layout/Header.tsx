@@ -41,6 +41,15 @@ export function Header() {
                     <Link to="/profile" className="block py-2 px-4 rounded-lg hover:bg-muted">
                       Meu Perfil
                     </Link>
+                    {isAdmin && (
+                      <>
+                        <hr className="my-4" />
+                        <Link to="/admin" className="block py-2 px-4 rounded-lg hover:bg-muted text-destructive font-medium flex items-center gap-2">
+                          <Shield className="w-4 h-4" />
+                          Painel Admin
+                        </Link>
+                      </>
+                    )}
                     <hr className="my-4" />
                     <Link to="/for-business" className="block py-2 px-4 rounded-lg hover:bg-muted text-primary">
                       Para Empresas
