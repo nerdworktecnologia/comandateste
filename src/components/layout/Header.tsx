@@ -1,4 +1,4 @@
-import { MapPin, Menu, Download, Shield } from 'lucide-react';
+import { MapPin, Menu, Download, Shield, Bell, BellOff } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -7,11 +7,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CartDrawer } from '@/components/cart/CartDrawer';
 import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
+import { useNotificationToggle } from '@/hooks/useNotificationToggle';
 
 export function Header() {
   const { user, profile, isAdmin } = useAuth();
   const navigate = useNavigate();
   const { canInstall, isIOS, showNativePrompt, install } = useInstallPrompt();
+  const { isSubscribed, isLoading, isSupported, toggle } = useNotificationToggle();
 
   return (
     <header className="sticky top-0 z-40 bg-header border-b border-primary/20">
@@ -127,6 +129,22 @@ export function Header() {
                   </Button>
                 </Link>
               ) : null
+            )}
+            {user && isSupported && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggle}
+                disabled={isLoading}
+                className="hover:bg-white/20 relative"
+                title={isSubscribed ? 'Desativar notificações' : 'Ativar notificações'}
+              >
+                {isSubscribed ? (
+                  <Bell className="w-5 h-5 text-header-text" />
+                ) : (
+                  <BellOff className="w-5 h-5 text-header-text/60" />
+                )}
+              </Button>
             )}
             <CartDrawer />
 
