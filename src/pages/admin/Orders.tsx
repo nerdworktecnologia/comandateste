@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ClipboardList, Eye, Search } from 'lucide-react';
+import { ExportButton } from '@/components/admin/ExportButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -76,9 +77,36 @@ export default function AdminOrders() {
     <div className="min-h-screen bg-background">
       <AdminSidebar />
       <main className="lg:ml-64">
-        <header className="sticky top-0 z-40 bg-card border-b border-border px-4 lg:px-6 py-4">
-          <h1 className="text-xl font-semibold">Pedidos</h1>
-          <p className="text-sm text-muted-foreground">Gerenciar todos os pedidos da plataforma</p>
+        <header className="sticky top-0 z-40 bg-card border-b border-border px-4 lg:px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold">Pedidos</h1>
+            <p className="text-sm text-muted-foreground">Gerenciar todos os pedidos da plataforma</p>
+          </div>
+          <ExportButton
+            title="Pedidos"
+            subtitle="Relatório de pedidos da plataforma"
+            filename="pedidos-comanda"
+            columns={[
+              { header: 'Pedido', key: 'number', width: 18 },
+              { header: 'Data', key: 'date', width: 14 },
+              { header: 'Subtotal', key: 'subtotal', width: 14 },
+              { header: 'Taxa Entrega', key: 'delivery_fee', width: 14 },
+              { header: 'Total', key: 'total', width: 14 },
+              { header: 'Status', key: 'status', width: 14 },
+              { header: 'Endereço', key: 'address', width: 30 },
+              { header: 'Cidade', key: 'city', width: 16 },
+            ]}
+            data={filteredOrders.map(o => ({
+              number: o.order_number,
+              date: new Date(o.created_at).toLocaleDateString('pt-BR'),
+              subtotal: `R$ ${Number(o.subtotal).toFixed(2)}`,
+              delivery_fee: `R$ ${Number(o.delivery_fee || 0).toFixed(2)}`,
+              total: `R$ ${Number(o.total).toFixed(2)}`,
+              status: statusLabels[o.status] || o.status,
+              address: o.delivery_address,
+              city: o.delivery_city,
+            }))}
+          />
         </header>
 
         <div className="p-4 lg:p-6 space-y-4">

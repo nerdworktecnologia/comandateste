@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { CreateUserDialog } from '@/components/admin/CreateUserDialog';
 import { EditUserDialog } from '@/components/admin/EditUserDialog';
+import { ExportButton } from '@/components/admin/ExportButton';
 import { DeleteUserDialog } from '@/components/admin/DeleteUserDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -215,6 +216,27 @@ export default function AdminUsers() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <ExportButton
+                title="Usuários"
+                subtitle="Relatório de usuários da plataforma"
+                filename="usuarios-comanda"
+                columns={[
+                  { header: 'Nome', key: 'name', width: 25 },
+                  { header: 'Telefone', key: 'phone', width: 18 },
+                  { header: 'Cidade', key: 'city', width: 18 },
+                  { header: 'Estado', key: 'state', width: 10 },
+                  { header: 'Papéis', key: 'roles', width: 30 },
+                  { header: 'Cadastro', key: 'date', width: 14 },
+                ]}
+                data={filteredUsers.map(u => ({
+                  name: u.full_name || 'Sem nome',
+                  phone: u.phone || '',
+                  city: u.city || '',
+                  state: u.state || '',
+                  roles: u.roles.map(r => roleConfig[r].label).join(', '),
+                  date: new Date(u.created_at).toLocaleDateString('pt-BR'),
+                }))}
+              />
               <Badge variant="outline" className="hidden sm:flex">
                 {users.length} usuários
               </Badge>
