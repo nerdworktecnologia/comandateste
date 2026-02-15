@@ -1,4 +1,4 @@
-import { MapPin, Menu, Download } from 'lucide-react';
+import { MapPin, Menu, Download, Shield } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -9,7 +9,7 @@ import { GlobalSearch } from '@/components/search/GlobalSearch';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 
 export function Header() {
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const navigate = useNavigate();
   const { canInstall, isIOS, showNativePrompt, install } = useInstallPrompt();
 
@@ -83,6 +83,18 @@ export function Header() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Link to="/admin">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="hidden sm:flex gap-1.5 border-header-text/30 text-header-text hover:bg-white/20 text-xs"
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  Admin
+                </Button>
+              </Link>
+            )}
             {canInstall && (
               showNativePrompt ? (
                 <Button
