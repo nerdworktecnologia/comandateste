@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 const VAPID_PUBLIC_KEY = 'BGo41YgZmAeul8DB79wHHHeCVo5fe_rwNsyLGE1kkF-AhOS810IFjt6IYITQpbYS7rgw_olOxMDs8kAyUCkv0mY';
 
@@ -46,7 +47,6 @@ export function PushNotificationManager() {
 
         const json = subscription.toJSON();
 
-        const { supabase } = await import('@/integrations/supabase/client');
         await (supabase as any).from('push_subscriptions').upsert(
           {
             user_id: user.id,
