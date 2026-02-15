@@ -55,12 +55,6 @@ export function SplashScreen({ onFinish, duration = 5000 }: SplashScreenProps) {
           </div>
         </div>
 
-        {/* App Name */}
-        <h1 className={`text-3xl font-bold text-primary-foreground tracking-widest uppercase transition-all duration-700 delay-300 ease-out ${
-          phase !== 'enter' ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
-        }`}>
-          Comanda
-        </h1>
 
         {/* Tagline */}
         <p className={`text-sm text-primary-foreground/60 tracking-wide transition-all duration-700 delay-500 ease-out ${
