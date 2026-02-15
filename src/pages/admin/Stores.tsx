@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Store, Search, Filter, Eye, CheckCircle, XCircle, Ban, RotateCcw } from 'lucide-react';
+import { ExportButton } from '@/components/admin/ExportButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -91,13 +92,36 @@ export default function AdminStores() {
       <AdminSidebar />
 
       <main className="lg:ml-64">
-        <header className="sticky top-0 z-40 bg-card border-b border-border px-4 lg:px-6 py-4">
+        <header className="sticky top-0 z-40 bg-card border-b border-border px-4 lg:px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold">Gestão de Empresas</h1>
             <p className="text-sm text-muted-foreground">
               Aprove, rejeite ou suspenda empresas na plataforma
             </p>
           </div>
+          <ExportButton
+            title="Empresas"
+            subtitle="Relatório de empresas da plataforma"
+            filename="empresas-comanda"
+            columns={[
+              { header: 'Nome', key: 'name', width: 25 },
+              { header: 'Email', key: 'email', width: 25 },
+              { header: 'Telefone', key: 'phone', width: 16 },
+              { header: 'Cidade', key: 'city', width: 16 },
+              { header: 'Estado', key: 'state', width: 10 },
+              { header: 'Status', key: 'status', width: 14 },
+              { header: 'Cadastro', key: 'date', width: 14 },
+            ]}
+            data={filteredStores.map(s => ({
+              name: s.name,
+              email: s.email || '',
+              phone: s.phone || '',
+              city: s.city,
+              state: s.state,
+              status: statusConfig[s.status].label,
+              date: new Date(s.created_at).toLocaleDateString('pt-BR'),
+            }))}
+          />
         </header>
 
         <div className="p-4 lg:p-6 space-y-6">

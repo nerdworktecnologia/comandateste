@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Database } from '@/integrations/supabase/types';
 import { Plus, Pencil, Trash2, GripVertical, Search } from 'lucide-react';
+import { ExportButton } from '@/components/admin/ExportButton';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -234,9 +235,32 @@ export default function AdminCategories() {
             <h1 className="text-xl font-semibold">Categorias</h1>
             <p className="text-sm text-muted-foreground">Arraste para reordenar • Gerenciar categorias</p>
           </div>
-          <Button onClick={openNew}>
-            <Plus className="w-4 h-4 mr-2" /> Nova Categoria
-          </Button>
+          <div className="flex items-center gap-2">
+            <ExportButton
+              title="Categorias"
+              subtitle="Relatório de categorias da plataforma"
+              filename="categorias-comanda"
+              columns={[
+                { header: 'Ordem', key: 'order', width: 10 },
+                { header: 'Ícone', key: 'icon', width: 8 },
+                { header: 'Nome', key: 'name', width: 22 },
+                { header: 'Tipo', key: 'type', width: 16 },
+                { header: 'Slug', key: 'slug', width: 20 },
+                { header: 'Ativa', key: 'active', width: 10 },
+              ]}
+              data={displayList.map(c => ({
+                order: c.sort_order,
+                icon: c.icon || '📁',
+                name: c.name,
+                type: categoryTypeLabels[c.category_type] || c.category_type,
+                slug: c.slug,
+                active: c.is_active ? 'Sim' : 'Não',
+              }))}
+            />
+            <Button onClick={openNew}>
+              <Plus className="w-4 h-4 mr-2" /> Nova Categoria
+            </Button>
+          </div>
         </header>
 
         <div className="p-4 lg:p-6 space-y-4">
