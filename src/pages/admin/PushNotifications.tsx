@@ -58,6 +58,12 @@ export default function AdminPushNotifications() {
           .from('push_subscriptions')
           .select('user_id');
         userIds = [...new Set((data || []).map((d: any) => d.user_id))] as string[];
+      } else if (target === 'customers') {
+        const { data } = await supabase
+          .from('user_roles')
+          .select('user_id')
+          .eq('role', 'customer');
+        userIds = (data || []).map(d => d.user_id);
       } else if (target === 'store_owners') {
         const { data } = await supabase
           .from('user_roles')
@@ -169,6 +175,7 @@ export default function AdminPushNotifications() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos os usuários</SelectItem>
+                    <SelectItem value="customers">Clientes</SelectItem>
                     <SelectItem value="store_owners">Donos de lojas</SelectItem>
                     <SelectItem value="drivers">Entregadores</SelectItem>
                   </SelectContent>
