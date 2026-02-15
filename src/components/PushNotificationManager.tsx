@@ -27,20 +27,43 @@ export function PushNotificationManager() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
     if (Notification.permission === 'denied') return;
 
-    // Only auto-prompt if not already subscribed
     const autoSubscribe = async () => {
       try {
         const registration = await navigator.serviceWorker.register('/sw.js');
         await navigator.serviceWorker.ready;
 
-        const existing = await (registration as any).pushManager.getSubscription();
-        if (existing) return; // Already subscribed
+        let subscription = await (registration as any).pushManager.getSubscription();
 
-        // Ask for permission
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') return;
+        // If there's an existing subscription, unsubscribe and re-subscribe
+        // to ensure it uses the current VAPID key
+        if (subscription) {
+          // Check if already saved in DB
+          const json = subscription.toJSON();
+          const { data: existing } = await (supabase as any)
+            .from('push_subscriptions')
+            .select('id')
+            .eq('endpoint', json.endpoint)
+            .eq('user_id', user.id)
+            .maybeSingle();
 
-        const subscription = await (registration as any).pushManager.subscribe({
+          if (existing) {
+            console.log('Push subscription already synced');
+            return;
+          }
+
+          // Subscription exists in browser but not in DB — re-register
+          await subscription.unsubscribe();
+          subscription = null;
+        }
+
+        // Ask for permission if not already granted
+        if (Notification.permission === 'default') {
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') return;
+        }
+
+        // Subscribe with current VAPID key
+        subscription = await (registration as any).pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
         });
@@ -63,8 +86,7 @@ export function PushNotificationManager() {
       }
     };
 
-    // Delay to not block initial render
-    const timer = setTimeout(autoSubscribe, 3000);
+    const timer = setTimeout(autoSubscribe, 2000);
     return () => clearTimeout(timer);
   }, [user]);
 
